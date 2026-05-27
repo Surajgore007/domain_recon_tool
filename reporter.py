@@ -29,11 +29,12 @@ def _build_html(r: dict) -> str:
     ts     = r.get("timestamp", "")
     mods   = r.get("modules", {})
 
-    dns     = mods.get("dns", {})
-    whois   = mods.get("whois", {})
-    crtsh   = mods.get("crtsh", {})
+    dns     = mods.get("dns",     {})
+    whois   = mods.get("whois",   {})
+    crtsh   = mods.get("crtsh",   {})
     headers = mods.get("headers", {})
-    ports   = mods.get("ports", {})
+    ports   = mods.get("ports",   {})
+    tls     = mods.get("tls",     {})
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -86,6 +87,7 @@ def _build_html(r: dict) -> str:
 {_whois_section(whois)}
 {_crtsh_section(crtsh)}
 {_headers_section(headers)}
+{_tls_section(tls)}
 {_ports_section(ports)}
 </body>
 </html>"""
@@ -191,3 +193,48 @@ def _ports_section(p: dict) -> str:
         rows += f"<tr><td>{port_info['port']}</td><td>{port_info['service']}</td><td>{risk}</td></tr>"
     return f"""<h2>Puertos abiertos (IP: {ip})</h2>
 <table><thead><tr><th>Puerto</th><th>Servicio</th><th>Riesgo</th></tr></thead><tbody>{rows}</tbody></table>"""
+
+
+def _tls_section(tls: dict) -> str:
+    if not tls:
+        return ""
+    if "error" in tls:
+        return f'<h2>TLS / SSL</h2><p class="badge bad">{tls["error"]}</p>'
+
+    cert    = tls.get("cert", {})
+    cipher  = tls.get("cipher", {})
+    days    = cert.get("days_left")
+    ver_sup = tls.get("version_support", [])
+    issues  = tls.get("issues", [])
+
+    if isinstance(days, int):
+        days_color = "var(--green)" if days > 30 else "var(--yellow)" if days >= 0 else "var(--red)"
+        days_label = f'<span style="color:{days_color}">{days} días restantes</span>'
+    else:
+        days_label = "—"
+
+    ver_rows = ""
+    for v in ver_sup:
+        badge = '<span class="badge ok">SI</span>' if v["supported"] else '<span class="badge bad">NO</span>'
+        ver_rows += f"<tr><td>{v['label']}</td><td>{badge}</td></tr>"
+
+    issue_html = ""
+    if issues:
+        items = "".join(f"<li>{i}</li>" for i in issues)
+        issue_html = f'<div class="badge bad" style="margin-bottom:.5rem">⚠ {len(issues)} problema(s)</div><ul style="margin-left:1rem;color:var(--red)">{items}</ul>'
+
+    sans = ", ".join(cert.get("sans", [])[:8])
+
+    return f"""<h2>TLS / SSL</h2>
+{issue_html}
+<table><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>
+<tr><td>Versión negociada</td><td><code>{tls.get('negotiated_version','—')}</code></td></tr>
+<tr><td>Cipher suite</td><td><code>{cipher.get('name','—')}</code> ({cipher.get('bits','?')} bits)</td></tr>
+<tr><td>Sujeto (CN)</td><td>{cert.get('subject_cn','—')}</td></tr>
+<tr><td>Emisor</td><td>{cert.get('issuer_org','—')} — {cert.get('issuer_cn','—')}</td></tr>
+<tr><td>Válido desde</td><td>{cert.get('not_before','—')}</td></tr>
+<tr><td>Vence</td><td>{cert.get('not_after','—')} &nbsp; {days_label}</td></tr>
+<tr><td>SANs ({cert.get('san_count',0)})</td><td style="font-size:.8rem">{sans}</td></tr>
+</tbody></table>
+<h2 style="margin-top:.5rem">Versiones TLS soportadas</h2>
+<table><thead><tr><th>Versión</th><th>Soportada</th></tr></thead><tbody>{ver_rows}</tbody></table>"""

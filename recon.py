@@ -14,7 +14,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich import box
 
-from modules import dns_module, whois_module, crtsh_module, headers_module, portscan
+from modules import dns_module, whois_module, crtsh_module, headers_module, portscan, tls_module
 from reporter import generate_report
 
 console = Console()
@@ -25,6 +25,7 @@ MODULES = {
     "crtsh":   crtsh_module.run,
     "headers": headers_module.run,
     "ports":   portscan.run,
+    "tls":     tls_module.run,
 }
 
 
@@ -143,6 +144,22 @@ def print_summary(target: str, results: dict) -> None:
             console.print(f"  [dim]·[/dim] {p['port']}/{p['service']}{warn}")
         if risky:
             console.print(f"  [red]Puertos de alto riesgo expuestos: {len(risky)}[/red]")
+        console.print()
+
+    # TLS
+    if "tls" in results and "error" not in results["tls"]:
+        tls = results["tls"]
+        cert = tls.get("cert", {})
+        days = cert.get("days_left")
+        days_color = "green" if isinstance(days, int) and days > 30 else "yellow" if isinstance(days, int) and days >= 0 else "red"
+        console.print(f"[bold]TLS[/bold]  {tls.get('negotiated_version','?')} · {tls.get('cipher',{}).get('name','?')}")
+        console.print(f"  [cyan]Emisor:[/cyan] {cert.get('issuer_org','?')} ({cert.get('issuer_cn','?')})")
+        console.print(f"  [cyan]Vence:[/cyan]  {cert.get('not_after','?')}  [{days_color}]{days} días[/{days_color}]")
+        console.print(f"  [cyan]SANs:[/cyan]   {', '.join(cert.get('sans', [])[:5])}")
+        issues = tls.get("issues", [])
+        if issues:
+            for issue in issues:
+                console.print(f"  [red]⚠ {issue}[/red]")
         console.print()
 
 
