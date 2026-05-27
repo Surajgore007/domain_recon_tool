@@ -37,6 +37,7 @@ def _build_html(r: dict) -> str:
     tls     = mods.get("tls",     {})
     email   = mods.get("email",   {})
     tech    = mods.get("tech",    {})
+    wb      = mods.get("wayback", {})
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -92,6 +93,7 @@ def _build_html(r: dict) -> str:
 {_tls_section(tls)}
 {_email_section(email)}
 {_tech_section(tech)}
+{_wayback_section(wb)}
 {_ports_section(ports)}
 </body>
 </html>"""
@@ -301,3 +303,48 @@ def _tech_section(tech: dict) -> str:
 
     return f"""<h2>Tech Stack ({len(techs)} tecnologías)</h2>
 <table><thead><tr><th>Tecnología</th><th>Categoría</th><th>Evidencia</th></tr></thead><tbody>{rows}</tbody></table>"""
+
+
+def _wayback_section(wb: dict) -> str:
+    if not wb:
+        return ""
+    if "error" in wb:
+        return f'<h2>Wayback Machine</h2><p style="color:var(--muted)">{wb["error"]}</p>'
+
+    total      = wb.get("total_snapshots", 0)
+    latest     = wb.get("latest_snapshot", "")
+    latest_ts  = wb.get("latest_timestamp", "")
+    first      = wb.get("first_seen", "")
+    last       = wb.get("last_seen", "")
+    subs       = wb.get("subdomains", [])
+    interesting = wb.get("interesting", [])
+    mime       = wb.get("mime_breakdown", {})
+
+    snapshot_html = f'<p><a href="{latest}" target="_blank" style="color:var(--blue)">{latest}</a> &nbsp;<span style="color:var(--muted)">({latest_ts})</span></p>' if latest else ""
+
+    sub_html = ""
+    if subs:
+        tags = "".join(f'<span class="subdomain-list"><span>{s}</span></span>' for s in subs)
+        sub_html = f"<p style='margin:.5rem 0 .25rem;color:var(--muted);font-size:.8rem'>Subdominios encontrados en archivo:</p><div class='subdomain-list'>" + "".join(f"<span>{s}</span>" for s in subs) + "</div>"
+
+    int_html = ""
+    if interesting:
+        rows = "".join(f'<tr><td style="font-size:.8rem;font-family:monospace">{u[:100]}</td></tr>' for u in interesting[:15])
+        int_html = f'<h2 style="margin-top:.75rem">Endpoints interesantes ({len(interesting)})</h2><table><tbody>{rows}</tbody></table>'
+
+    mime_html = ""
+    if mime:
+        rows = "".join(f"<tr><td>{k}</td><td>{v}</td></tr>" for k, v in list(mime.items())[:6])
+        mime_html = f'<h2 style="margin-top:.75rem">Tipos de contenido archivados</h2><table><thead><tr><th>Tipo</th><th>URLs</th></tr></thead><tbody>{rows}</tbody></table>'
+
+    meta = ""
+    if first and last:
+        meta = f'<p style="color:var(--muted);font-size:.8rem">Primera captura: {first} &nbsp;·&nbsp; Última: {last} &nbsp;·&nbsp; Total URLs: {total}</p>'
+
+    return f"""<h2>Wayback Machine</h2>
+<p style="color:var(--muted);font-size:.85rem">Snapshot más reciente:</p>
+{snapshot_html}
+{meta}
+{sub_html}
+{int_html}
+{mime_html}"""

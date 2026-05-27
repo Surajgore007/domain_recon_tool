@@ -14,7 +14,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich import box
 
-from modules import dns_module, whois_module, crtsh_module, headers_module, portscan, tls_module, email_security, tech_fingerprint
+from modules import dns_module, whois_module, crtsh_module, headers_module, portscan, tls_module, email_security, tech_fingerprint, wayback
 from reporter import generate_report
 
 console = Console()
@@ -28,6 +28,7 @@ MODULES = {
     "tls":     tls_module.run,
     "email":   email_security.run,
     "tech":    tech_fingerprint.run,
+    "wayback": wayback.run,
 }
 
 
@@ -146,6 +147,23 @@ def print_summary(target: str, results: dict) -> None:
             console.print(f"  [dim]·[/dim] {p['port']}/{p['service']}{warn}")
         if risky:
             console.print(f"  [red]Puertos de alto riesgo expuestos: {len(risky)}[/red]")
+        console.print()
+
+    # Wayback Machine
+    if "wayback" in results and "error" not in results["wayback"]:
+        wb = results["wayback"]
+        total = wb.get("total_snapshots", 0)
+        latest = wb.get("latest_snapshot")
+        interesting = wb.get("interesting", [])
+        console.print(f"[bold]Wayback Machine[/bold]  ({total} URLs históricas)")
+        if latest:
+            console.print(f"  [cyan]Último snapshot:[/cyan] {wb.get('latest_timestamp','?')} — {latest}")
+        if wb.get("subdomains"):
+            console.print(f"  [cyan]Subdominios en archivo:[/cyan] {', '.join(wb['subdomains'][:5])}")
+        if interesting:
+            console.print(f"  [yellow]Endpoints interesantes ({len(interesting)}):[/yellow]")
+            for u in interesting[:5]:
+                console.print(f"    [dim]·[/dim] {u}")
         console.print()
 
     # Tech fingerprint
