@@ -35,6 +35,7 @@ def _build_html(r: dict) -> str:
     headers = mods.get("headers", {})
     ports   = mods.get("ports",   {})
     tls     = mods.get("tls",     {})
+    email   = mods.get("email",   {})
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -88,6 +89,7 @@ def _build_html(r: dict) -> str:
 {_crtsh_section(crtsh)}
 {_headers_section(headers)}
 {_tls_section(tls)}
+{_email_section(email)}
 {_ports_section(ports)}
 </body>
 </html>"""
@@ -238,3 +240,40 @@ def _tls_section(tls: dict) -> str:
 </tbody></table>
 <h2 style="margin-top:.5rem">Versiones TLS soportadas</h2>
 <table><thead><tr><th>Versión</th><th>Soportada</th></tr></thead><tbody>{ver_rows}</tbody></table>"""
+
+
+def _email_section(em: dict) -> str:
+    if not em:
+        return ""
+    if "error" in em:
+        return f'<h2>Email Security</h2><p class="badge bad">{em["error"]}</p>'
+
+    score = em.get("score", 0)
+    color = "var(--green)" if score >= 70 else "var(--yellow)" if score >= 40 else "var(--red)"
+
+    spf   = em.get("spf",   {})
+    dkim  = em.get("dkim",  {})
+    dmarc = em.get("dmarc", {})
+
+    spf_badge   = '<span class="badge ok">PRESENTE</span>' if spf.get("present")  else '<span class="badge bad">AUSENTE</span>'
+    dkim_badge  = '<span class="badge ok">ENCONTRADO</span>' if dkim.get("found") else '<span class="badge bad">NO ENCONTRADO</span>'
+    dmarc_badge = '<span class="badge ok">PRESENTE</span>' if dmarc.get("present") else '<span class="badge bad">AUSENTE</span>'
+
+    selectors_html = ""
+    if dkim.get("selectors"):
+        sels = "".join(f'<span class="badge ok" style="margin:.1rem">{s["selector"]}</span>' for s in dkim["selectors"])
+        selectors_html = f"<br><small style='color:var(--muted)'>Selectores: {sels}</small>"
+
+    issues = em.get("all_issues", [])
+    issue_html = ""
+    if issues:
+        items = "".join(f"<li>{i}</li>" for i in issues)
+        issue_html = f'<ul style="margin:.5rem 0 .5rem 1rem;color:var(--yellow)">{items}</ul>'
+
+    return f"""<h2>Email Security &nbsp;<span style="color:{color};font-size:.85rem">Score: {score}%</span></h2>
+{issue_html}
+<table><thead><tr><th>Protocolo</th><th>Estado</th><th>Política</th></tr></thead><tbody>
+<tr><td>SPF</td><td>{spf_badge}</td><td>{spf.get('policy') or '—'}</td></tr>
+<tr><td>DKIM</td><td>{dkim_badge}{selectors_html}</td><td>—</td></tr>
+<tr><td>DMARC</td><td>{dmarc_badge}</td><td>{dmarc.get('policy') or '—'} (pct={dmarc.get('pct','?')}%)</td></tr>
+</tbody></table>"""

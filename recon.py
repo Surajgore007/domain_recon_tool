@@ -14,7 +14,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich import box
 
-from modules import dns_module, whois_module, crtsh_module, headers_module, portscan, tls_module
+from modules import dns_module, whois_module, crtsh_module, headers_module, portscan, tls_module, email_security
 from reporter import generate_report
 
 console = Console()
@@ -26,6 +26,7 @@ MODULES = {
     "headers": headers_module.run,
     "ports":   portscan.run,
     "tls":     tls_module.run,
+    "email":   email_security.run,
 }
 
 
@@ -144,6 +145,23 @@ def print_summary(target: str, results: dict) -> None:
             console.print(f"  [dim]·[/dim] {p['port']}/{p['service']}{warn}")
         if risky:
             console.print(f"  [red]Puertos de alto riesgo expuestos: {len(risky)}[/red]")
+        console.print()
+
+    # Email security
+    if "email" in results and "error" not in results["email"]:
+        em = results["email"]
+        score = em.get("score", 0)
+        color = "green" if score >= 70 else "yellow" if score >= 40 else "red"
+        console.print(f"[bold]Email Security[/bold]  score: [{color}]{score}%[/{color}]")
+        spf   = em.get("spf",   {})
+        dkim  = em.get("dkim",  {})
+        dmarc = em.get("dmarc", {})
+        console.print(f"  [cyan]SPF:[/cyan]   {'presente' if spf.get('present') else '[red]AUSENTE[/red]'}  política: {spf.get('policy') or '—'}")
+        sels = ", ".join(s["selector"] for s in dkim.get("selectors", []))
+        console.print(f"  [cyan]DKIM:[/cyan]  {'encontrado' if dkim.get('found') else '[red]NO ENCONTRADO[/red]'}  {f'(selectores: {sels})' if sels else ''}")
+        console.print(f"  [cyan]DMARC:[/cyan] {'presente' if dmarc.get('present') else '[red]AUSENTE[/red]'}  política: {dmarc.get('policy') or '—'}")
+        for issue in em.get("all_issues", []):
+            console.print(f"  [yellow]⚠ {issue}[/yellow]")
         console.print()
 
     # TLS
