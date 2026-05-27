@@ -14,7 +14,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich import box
 
-from modules import dns_module, whois_module, crtsh_module, headers_module, portscan, tls_module, email_security
+from modules import dns_module, whois_module, crtsh_module, headers_module, portscan, tls_module, email_security, tech_fingerprint
 from reporter import generate_report
 
 console = Console()
@@ -27,6 +27,7 @@ MODULES = {
     "ports":   portscan.run,
     "tls":     tls_module.run,
     "email":   email_security.run,
+    "tech":    tech_fingerprint.run,
 }
 
 
@@ -145,6 +146,17 @@ def print_summary(target: str, results: dict) -> None:
             console.print(f"  [dim]·[/dim] {p['port']}/{p['service']}{warn}")
         if risky:
             console.print(f"  [red]Puertos de alto riesgo expuestos: {len(risky)}[/red]")
+        console.print()
+
+    # Tech fingerprint
+    if "tech" in results and "error" not in results["tech"]:
+        tech = results["tech"]
+        by_cat = tech.get("by_category", {})
+        console.print(f"[bold]Tech Stack[/bold]  ({tech.get('total', 0)} tecnologías detectadas)")
+        for cat, techs in by_cat.items():
+            console.print(f"  [cyan]{cat:<18}[/cyan] {', '.join(techs)}")
+        if not by_cat:
+            console.print("  [dim]Stack no identificado (puede estar obfuscado)[/dim]")
         console.print()
 
     # Email security

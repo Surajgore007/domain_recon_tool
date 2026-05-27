@@ -36,6 +36,7 @@ def _build_html(r: dict) -> str:
     ports   = mods.get("ports",   {})
     tls     = mods.get("tls",     {})
     email   = mods.get("email",   {})
+    tech    = mods.get("tech",    {})
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -90,6 +91,7 @@ def _build_html(r: dict) -> str:
 {_headers_section(headers)}
 {_tls_section(tls)}
 {_email_section(email)}
+{_tech_section(tech)}
 {_ports_section(ports)}
 </body>
 </html>"""
@@ -277,3 +279,25 @@ def _email_section(em: dict) -> str:
 <tr><td>DKIM</td><td>{dkim_badge}{selectors_html}</td><td>—</td></tr>
 <tr><td>DMARC</td><td>{dmarc_badge}</td><td>{dmarc.get('policy') or '—'} (pct={dmarc.get('pct','?')}%)</td></tr>
 </tbody></table>"""
+
+
+def _tech_section(tech: dict) -> str:
+    if not tech:
+        return ""
+    if "error" in tech:
+        return f'<h2>Tech Stack</h2><p class="badge bad">{tech["error"]}</p>'
+
+    by_cat = tech.get("by_category", {})
+    techs  = tech.get("technologies", {})
+
+    if not techs:
+        return '<h2>Tech Stack</h2><p style="color:var(--muted)">Stack no identificado (puede estar obfuscado).</p>'
+
+    rows = ""
+    for name, info in techs.items():
+        evidence = info.get("evidence", "")
+        ver      = f' <span style="color:var(--muted);font-size:.8rem">{info["version"]}</span>' if info.get("version") else ""
+        rows += f'<tr><td>{name}{ver}</td><td><span class="badge ok">{info["category"]}</span></td><td style="color:var(--muted);font-size:.8rem">{evidence}</td></tr>'
+
+    return f"""<h2>Tech Stack ({len(techs)} tecnologías)</h2>
+<table><thead><tr><th>Tecnología</th><th>Categoría</th><th>Evidencia</th></tr></thead><tbody>{rows}</tbody></table>"""
