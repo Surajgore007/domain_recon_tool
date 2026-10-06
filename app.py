@@ -32,6 +32,18 @@ app = FastAPI(
     version="2.0.0"
 )
 
+@app.middleware("http")
+async def vercel_path_fix(request, call_next):
+    matched_path = request.headers.get("x-matched-path")
+    if matched_path:
+        clean_path = matched_path.split("?")[0]
+        request.scope["path"] = clean_path
+    elif request.scope.get("path") in ("/api/index.py", "/api", "/api/"):
+        request.scope["path"] = "/"
+    elif request.scope.get("path", "").startswith("/api/index.py/"):
+        request.scope["path"] = request.scope["path"][len("/api/index.py"):]
+    return await call_next(request)
+
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
@@ -325,11 +337,20 @@ def delete_report(report_id: str):
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/", response_class=HTMLResponse)
+@app.get("/api", response_class=HTMLResponse)
+@app.get("/api/", response_class=HTMLResponse)
+@app.get("/api/index.py", response_class=HTMLResponse)
 def index():
     index_file = STATIC_DIR / "index.html"
-    if not index_file.exists():
-        return HTMLResponse("<h1>Dashboard index.html is being prepared...</h1>")
-    return HTMLResponse(index_file.read_text(encoding="utf-8"))
+    if index_file.exists():
+        return HTMLResponse(index_file.read_text(encoding="utf-8"))
+    
+    # Fallback to local or parent directory
+    alt_file = Path(__file__).resolve().parent / "static" / "index.html"
+    if alt_file.exists():
+        return HTMLResponse(alt_file.read_text(encoding="utf-8"))
+        
+    return HTMLResponse("<h1>OSINT Recon Dashboard is starting... please refresh in a moment.</h1>")
 
 def main():
     import uvicorn
