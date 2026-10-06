@@ -1,7 +1,7 @@
 import dns.resolver
 import re
 
-# Selectores DKIM comunes a probar
+# Common DKIM selectors to probe
 DKIM_SELECTORS = [
     "default", "google", "mail", "dkim", "email",
     "selector1", "selector2", "k1", "smtp", "mta",
@@ -19,27 +19,27 @@ def _query_txt(resolver, name: str) -> list[str]:
 def _analyze_spf(records: list[str]) -> dict:
     spf = next((r for r in records if r.startswith("v=spf1")), None)
     if not spf:
-        return {"present": False, "record": None, "policy": None, "issues": ["Sin registro SPF"]}
+        return {"present": False, "record": None, "policy": None, "issues": ["No SPF record found"]}
 
     issues = []
     policy = None
     if "-all" in spf:
-        policy = "fail"        # política estricta — correos no autorizados se rechazan
+        policy = "fail"        # strict policy — unauthorized emails are rejected
     elif "~all" in spf:
-        policy = "softfail"    # política permisiva — correos no autorizados marcados como spam
+        policy = "softfail"    # permissive policy — unauthorized emails marked as spam
     elif "?all" in spf:
         policy = "neutral"
-        issues.append("Política SPF neutral (?all) — no protege contra spoofing")
+        issues.append("Neutral SPF policy (?all) — provides no protection against spoofing")
     elif "+all" in spf:
         policy = "pass"
-        issues.append("Política SPF +all — cualquier servidor puede enviar correo")
+        issues.append("Permissive SPF policy (+all) — permits any mail server to send on behalf of domain")
     else:
-        issues.append("Sin mecanismo 'all' — SPF incompleto")
+        issues.append("Missing 'all' mechanism — incomplete SPF configuration")
 
-    # Detectar demasiados lookups DNS (límite es 10)
+    # Detect too many DNS lookups (RFC limit is 10)
     lookup_mechanisms = re.findall(r"\b(include|a|mx|ptr|exists|redirect)\b", spf)
     if len(lookup_mechanisms) > 10:
-        issues.append(f"Demasiados lookups DNS ({len(lookup_mechanisms)}) — puede causar fallos SPF")
+        issues.append(f"Excessive DNS lookups ({len(lookup_mechanisms)}) — exceeds RFC limit of 10 and may cause SPF evaluation failures")
 
     return {"present": True, "record": spf, "policy": policy, "issues": issues}
 
@@ -47,28 +47,28 @@ def _analyze_spf(records: list[str]) -> dict:
 def _analyze_dmarc(records: list[str]) -> dict:
     dmarc = next((r for r in records if r.startswith("v=DMARC1")), None)
     if not dmarc:
-        return {"present": False, "record": None, "policy": None, "issues": ["Sin registro DMARC"]}
+        return {"present": False, "record": None, "policy": None, "issues": ["No DMARC record found"]}
 
     issues = []
     policy_match = re.search(r"\bp=(\w+)", dmarc)
     policy = policy_match.group(1) if policy_match else None
 
     if policy == "none":
-        issues.append("DMARC p=none — solo monitoreo, sin acción sobre correos fallidos")
+        issues.append("DMARC p=none policy — monitoring only, no rejection or quarantine applied to fraudulent emails")
     elif policy == "quarantine":
-        pass  # aceptable
+        pass  # acceptable
     elif policy == "reject":
-        pass  # política más estricta, ideal
+        pass  # strictest, recommended
 
     pct_match = re.search(r"\bpct=(\d+)", dmarc)
     pct = int(pct_match.group(1)) if pct_match else 100
     if pct < 100:
-        issues.append(f"DMARC pct={pct}% — política aplicada solo a {pct}% de los mensajes")
+        issues.append(f"DMARC pct={pct}% — policy applied only to {pct}% of inbound messages")
 
     rua_match = re.search(r"\brua=([^\s;]+)", dmarc)
     rua = rua_match.group(1) if rua_match else None
     if not rua:
-        issues.append("Sin rua — no se recibirán reportes DMARC agregados")
+        issues.append("Missing rua destination — aggregate DMARC telemetry reports will not be received")
 
     return {
         "present": True,
@@ -92,7 +92,7 @@ def _find_dkim(resolver, domain: str) -> dict:
     return {
         "found":     len(found) > 0,
         "selectors": found,
-        "issues":    [] if found else ["No se encontraron selectores DKIM comunes"],
+        "issues":    [] if found else ["No common DKIM selectors identified"],
     }
 
 
@@ -119,7 +119,7 @@ def run(domain: str, timeout: int = 10) -> dict:
 
 
 def _score(spf: dict, dkim: dict, dmarc: dict) -> int:
-    """Puntaje simple de 0 a 100 basado en presencia y políticas."""
+    """Security score from 0 to 100 based on presence and strictness of email records."""
     pts = 0
     if spf["present"]:
         pts += 25

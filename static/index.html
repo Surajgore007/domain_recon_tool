@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSINT Recon — Intelligence & Domain Reconnaissance Platform</title>
+  <meta name="description" content="Passive domain reconnaissance and intelligence tool. Zero paid APIs, instant multi-threaded analysis of DNS, WHOIS, CT logs, headers, ports, TLS, email, and historical archives.">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Navigation & Brand Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-icon">
+          <div class="radar-ping"></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="m4.93 4.93 4.24 4.24"></path>
+            <path d="m14.83 9.17 4.24-4.24"></path>
+            <path d="m14.83 14.83 4.24 4.24"></path>
+            <path d="m9.17 14.83-4.24 4.24"></path>
+            <circle cx="12" cy="12" r="4"></circle>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h1>
+            OSINT RECON
+            <span class="version-pill">v2.0 PLATFORM</span>
+          </h1>
+          <p>Passive Domain Reconnaissance & Threat Perimeter Analysis</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-open-archive" class="btn-header" title="View Saved Reports Archive">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path>
+          </svg>
+          Reports Archive
+          <span id="header-reports-badge" class="badge-count">0</span>
+        </button>
+
+        <button id="btn-load-sample" class="btn-header" title="Load Pre-saved Google.com Sample Scan">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+          </svg>
+          Load Sample
+        </button>
+      </div>
+    </header>
+
+    <!-- Reconnaissance Control Center -->
+    <section class="scan-card">
+      <form id="recon-form" class="scan-form">
+        <div class="input-row">
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input 
+              type="text" 
+              id="target-input" 
+              class="target-input" 
+              placeholder="Enter target domain or URL (e.g. example.com, github.com)..." 
+              autocomplete="off" 
+              spellcheck="false" 
+              required
+            >
+          </div>
+          <button type="submit" id="btn-submit-scan" class="btn-launch">
+            <span class="btn-text-label">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              Launch Recon
+            </span>
+          </button>
+        </div>
+
+        <!-- Quick target suggestion pills -->
+        <div class="target-hints">
+          <span>Quick Targets:</span>
+          <span class="hint-pill" data-domain="github.com">github.com</span>
+          <span class="hint-pill" data-domain="cloudflare.com">cloudflare.com</span>
+          <span class="hint-pill" data-domain="google.com">google.com</span>
+          <span class="hint-pill" data-domain="wikipedia.org">wikipedia.org</span>
+        </div>
+
+        <!-- Module Selection & Scan Parameters -->
+        <div class="module-settings-container">
+          <div class="settings-header">
+            <h3>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              Reconnaissance Modules (9 Parallel Analyzers)
+            </h3>
+            <div class="selector-controls">
+              <button type="button" id="btn-select-all" class="btn-text">Select All</button>
+              <button type="button" id="btn-select-none" class="btn-text">Clear</button>
+              <button type="button" id="btn-select-passive" class="btn-text">Passive Only</button>
+            </div>
+          </div>
+
+          <div class="modules-grid" id="modules-container">
+            <!-- Rendered dynamically via JS or preloaded -->
+          </div>
+
+          <div class="scan-options-row">
+            <div class="option-group">
+              <label for="timeout-slider">Module Timeout:</label>
+              <div class="slider-container">
+                <input type="range" id="timeout-slider" min="5" max="45" value="15" step="1">
+                <span id="timeout-display" class="timeout-val">15s</span>
+              </div>
+            </div>
+
+            <div class="option-group">
+              <label class="module-checkbox-label checked" style="padding: 0.35rem 0.6rem; margin: 0;">
+                <input type="checkbox" id="save-report-toggle" class="custom-checkbox" checked>
+                <span style="font-size: 0.8rem; font-weight: 500;">Auto-generate JSON & HTML Reports</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Real-time Live Scan Stream Tracker -->
+    <section id="live-tracker" class="live-tracker-panel">
+      <div class="tracker-header">
+        <div class="tracker-status">
+          <div class="tracker-spinner"></div>
+          <div>
+            <span class="tracker-title" id="tracker-status-text">Executing Multi-Threaded Reconnaissance...</span>
+            <div class="tracker-meta" id="tracker-target-meta">Target: —</div>
+          </div>
+        </div>
+        <div class="tracker-meta" id="tracker-counter">0 / 9 Modules</div>
+      </div>
+
+      <div class="progress-track">
+        <div id="progress-bar" class="progress-fill"></div>
+      </div>
+
+      <div class="module-steps-grid" id="steps-grid">
+        <!-- Live step chips -->
+      </div>
+    </section>
+
+    <!-- Active Target Presentation Strip (Shown once target loaded) -->
+    <section id="target-summary-strip" class="target-dashboard-strip" style="display: none;">
+      <div class="target-badge-group">
+        <div>
+          <div class="target-domain-title" id="active-domain-name">example.com</div>
+          <div class="target-time-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="active-scan-timestamp">2026-10-06 15:30 UTC</span>
+            <span>·</span>
+            <span id="active-active-modules-count">9 modules evaluated</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="target-actions-group">
+        <button id="btn-copy-target" class="btn-action" title="Copy domain to clipboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copy Domain
+        </button>
+
+        <button id="btn-download-json" class="btn-action" title="Download Machine-Readable JSON Report">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export JSON
+        </button>
+
+        <button id="btn-download-html" class="btn-action primary" title="View or Download Standalone HTML Dashboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          HTML Report
+        </button>
+      </div>
+    </section>
+
+    <!-- Executive KPI Metric Cards (5 Key Health Indicators) -->
+    <section id="kpi-section" class="kpi-metrics-grid" style="display: none;">
+      
+      <!-- Security Headers Score -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Security Headers</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-headers-score">—</span>
+          <span class="badge" id="kpi-headers-badge">Pending</span>
+        </div>
+        <span class="kpi-subtext" id="kpi-headers-subtext">HSTS, CSP, and framing posture</span>
+      </div>
+
+      <!-- Discovered Subdomains -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">CT Subdomains</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-subs-count">0</span>
+          <span class="badge badge-muted" id="kpi-subs-badge">Passive</span>
+        </div>
+        <span class="kpi-subtext" id="kpi-subs-subtext">Harvested from crt.sh logs</span>
+      </div>
+
+      <!-- Exposed & Risky Ports -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Port Exposure</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-ports-count">0</span>
+          <span class="badge" id="kpi-ports-badge">None Risky</span>
+        </div>
+        <span class="kpi-subtext" id="kpi-ports-subtext">18 standard perimeter ports audited</span>
+      </div>
+
+      <!-- TLS Certificate Health -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">TLS Certificate</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-tls-days">—</span>
+          <span class="badge" id="kpi-tls-badge">Active</span>
+        </div>
+        <span class="kpi-subtext" id="kpi-tls-subtext">Issuer & validity status</span>
+      </div>
+
+      <!-- Email Authentication -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Email Security</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-email-score">—</span>
+          <span class="badge" id="kpi-email-badge">SPF/DMARC</span>
+        </div>
+        <span class="kpi-subtext" id="kpi-email-subtext">Spoofing & phishing prevention</span>
+      </div>
+
+    </section>
+
+    <!-- Deep-Dive Interactive Intelligence Tabs -->
+    <main id="deep-dive-section" class="deep-dive-card" style="display: none;">
+      
+      <!-- Horizontal Navigation Bar -->
+      <nav class="tabs-navigation-bar" id="tab-nav">
+        <button class="tab-btn active" data-tab="tab-overview">
+          Overview & Audit
+        </button>
+        <button class="tab-btn" data-tab="tab-dns">
+          DNS Records <span class="tab-count" id="count-dns">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-whois">
+          WHOIS & Registry
+        </button>
+        <button class="tab-btn" data-tab="tab-subdomains">
+          Subdomains <span class="tab-count" id="count-subs">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-headers">
+          Security Headers
+        </button>
+        <button class="tab-btn" data-tab="tab-ports">
+          Open Ports <span class="tab-count" id="count-ports">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-tls">
+          TLS / SSL Certificate
+        </button>
+        <button class="tab-btn" data-tab="tab-email">
+          Email Security
+        </button>
+        <button class="tab-btn" data-tab="tab-tech">
+          Tech Stack <span class="tab-count" id="count-tech">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-wayback">
+          Wayback Machine <span class="tab-count" id="count-wb">0</span>
+        </button>
+      </nav>
+
+      <!-- Tab 1: Overview & Audit -->
+      <section id="tab-overview" class="tab-content-panel active">
+        <div class="section-header-row">
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 14 14"></polyline>
+            </svg>
+            Executive Summary & Security Findings
+          </h3>
+        </div>
+
+        <div id="overview-risk-alerts" style="margin-bottom: 1.5rem;">
+          <!-- Dynamically populated risk highlights -->
+        </div>
+
+        <div class="section-header-row" style="margin-top: 1.5rem;">
+          <h3>Evaluated Intelligence Modules</h3>
+        </div>
+        <div class="data-table-wrapper">
+          <table class="data-table" id="table-overview-modules">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Summary Findings</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 2: DNS Records -->
+      <section id="tab-dns" class="tab-content-panel">
+        <div class="section-header-row">
+          <h3>DNS Intelligence Records</h3>
+          <input type="text" id="filter-dns" class="filter-input" placeholder="Search DNS records (e.g. MX, IP)...">
+        </div>
+
+        <div class="data-table-wrapper">
+          <table class="data-table" id="table-dns">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Record Type</th>
+                <th>Resolved Values</th>
+                <th style="width: 80px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 3: WHOIS & Registration -->
+      <section id="tab-whois" class="tab-content-panel">
+        <div class="section-header-row">
+          <h3>Domain Registration & Ownership (WHOIS)</h3>
+        </div>
+        <div class="kv-grid" id="whois-grid">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- Tab 4: Subdomains Discovery -->
+      <section id="tab-subdomains" class="tab-content-panel">
+        <div class="section-header-row">
+          <h3>
+            Discovered Subdomains
+            <span class="badge badge-muted" id="subdomains-total-badge">0 total</span>
+          </h3>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="filter-subdomains" class="filter-input" placeholder="Filter subdomains...">
+            <button id="btn-copy-all-subs" class="btn-action">Copy All</button>
+            <button id="btn-export-subs-txt" class="btn-action">Download TXT</button>
+          </div>
+        </div>
+        <div class="subdomains-cloud" id="subdomains-container">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- Tab 5: Security Headers -->
+      <section id="tab-headers" class="tab-content-panel">
+        <div class="score-card-banner">
+          <div class="score-display-group">
+            <div id="headers-score-circle" class="score-circle">0%</div>
+            <div>
+              <h3 style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 0.2rem;">HTTP Security Headers Score</h3>
+              <p style="color: var(--text-dim); font-size: 0.82rem;" id="headers-score-explanation">Evaluation of defensive headers configured on web perimeter.</p>
+            </div>
+          </div>
+          <div id="headers-score-badges"></div>
+        </div>
+
+        <div class="data-table-wrapper">
+          <table class="data-table" id="table-headers">
+            <thead>
+              <tr>
+                <th>Security Header</th>
+                <th style="width: 120px;">Presence</th>
+                <th>Configured Header Value</th>
+                <th>Security Function</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 6: Open Ports & Services -->
+      <section id="tab-ports" class="tab-content-panel">
+        <div class="section-header-row">
+          <h3>Perimeter Port Scanner (18 Common Services)</h3>
+          <span class="badge badge-muted" id="ports-detected-label">0 open ports detected</span>
+        </div>
+        <div class="ports-matrix-grid" id="ports-grid">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- Tab 7: TLS / SSL Certificate -->
+      <section id="tab-tls" class="tab-content-panel">
+        <div class="section-header-row">
+          <h3>Cryptographic Perimeter (TLS / SSL)</h3>
+        </div>
+        <div class="kv-grid" id="tls-grid" style="margin-bottom: 1.5rem;">
+          <!-- Rendered via JS -->
+        </div>
+        <div class="section-header-row">
+          <h4 style="color: var(--text-primary); font-size: 0.95rem;">Subject Alternative Names (SANs)</h4>
+        </div>
+        <div class="subdomains-cloud" id="tls-sans-container" style="max-height: 180px;">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- Tab 8: Email Security -->
+      <section id="tab-email" class="tab-content-panel">
+        <div class="section-header-row">
+          <h3>Email Authentication & Anti-Spoofing</h3>
+          <span class="badge" id="email-score-pill">Score: 0%</span>
+        </div>
+        <div class="kv-grid" id="email-grid" style="margin-bottom: 1.5rem;">
+          <!-- Rendered via JS -->
+        </div>
+        <div class="section-header-row">
+          <h4 style="color: var(--text-primary); font-size: 0.95rem;">Detected Configuration Issues & Warnings</h4>
+        </div>
+        <div id="email-issues-list">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- Tab 9: Tech Stack Fingerprint -->
+      <section id="tab-tech" class="tab-content-panel">
+        <div class="section-header-row">
+          <h3>Technology Stack & Fingerprints</h3>
+          <span class="badge badge-muted" id="tech-total-badge">0 detected</span>
+        </div>
+        <div class="kv-grid" id="tech-grid">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- Tab 10: Wayback Machine -->
+      <section id="tab-wayback" class="tab-content-panel">
+        <div class="section-header-row">
+          <h3>Wayback Machine Historical Intelligence</h3>
+          <input type="text" id="filter-wayback" class="filter-input" placeholder="Search archived endpoints...">
+        </div>
+        <div class="kv-grid" id="wayback-summary-grid" style="margin-bottom: 1.5rem;">
+          <!-- Rendered via JS -->
+        </div>
+        <div class="section-header-row">
+          <h4 style="color: var(--text-primary); font-size: 0.95rem;">Interesting Endpoints & Archival Snapshots</h4>
+        </div>
+        <div class="data-table-wrapper">
+          <table class="data-table" id="table-wayback">
+            <thead>
+              <tr>
+                <th>Historical URL / Endpoint</th>
+                <th style="width: 140px;">Classification</th>
+                <th style="width: 80px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Empty State Placeholder (when no scan loaded yet) -->
+    <section id="empty-state" class="scan-card" style="text-align: center; padding: 3.5rem 2rem; margin-top: 1rem;">
+      <div style="max-width: 480px; margin: 0 auto;">
+        <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; color: var(--accent-primary);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="12 8 8 12 12 16 12 8"></polygon>
+            <line x1="16" y1="12" x2="12" y2="12"></line>
+          </svg>
+        </div>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">No Reconnaissance Data Loaded</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
+          Enter a domain above to run a comprehensive passive scan, or click "Load Sample" to explore pre-generated intelligence data.
+        </p>
+        <button id="btn-empty-load-sample" class="btn-launch" style="padding: 0.65rem 1.4rem; font-size: 0.85rem; display: inline-flex;">
+          Explore Sample Intelligence (google.com)
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Reports Archive Modal Drawer -->
+  <div id="archive-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+            <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path>
+          </svg>
+          Saved Reconnaissance Reports Archive
+        </h3>
+        <button id="btn-close-archive" class="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="data-table-wrapper">
+          <table class="data-table" id="table-archive-reports">
+            <thead>
+              <tr>
+                <th>Target Domain</th>
+                <th>Generated Timestamp</th>
+                <th>Modules</th>
+                <th>File Size</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

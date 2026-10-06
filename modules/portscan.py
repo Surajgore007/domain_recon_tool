@@ -1,7 +1,7 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Solo puertos comunes — no es un scan exhaustivo
+# Standard common ports — perimeter scan (not exhaustive)
 COMMON_PORTS: dict[int, str] = {
     21:    "FTP",
     22:    "SSH",
@@ -45,7 +45,7 @@ def run(domain: str, timeout: int = 10) -> dict:
     except socket.gaierror as e:
         return {"error": str(e)}
 
-    # Distribuye el timeout entre todos los puertos, mínimo 1 s
+    # Distribute timeout across all ports, minimum 1s
     per_port = max(1.0, timeout / len(COMMON_PORTS))
     open_ports: list[dict] = []
 

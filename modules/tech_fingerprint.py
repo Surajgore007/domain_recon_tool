@@ -3,9 +3,9 @@ import requests
 
 UA = "Mozilla/5.0 (compatible; osint-recon/1.0)"
 
-# Firmas: (patrón_regex, campo_donde_buscar, tecnología, categoría)
+# Signatures: (regex_pattern, field_to_search, technology, category)
 SIGNATURES: list[tuple[str, str, str, str]] = [
-    # Servidores web
+    # Web servers
     (r"nginx",              "server",      "Nginx",           "web-server"),
     (r"apache",             "server",      "Apache",          "web-server"),
     (r"cloudflare",         "server",      "Cloudflare",      "cdn"),
@@ -14,15 +14,15 @@ SIGNATURES: list[tuple[str, str, str, str]] = [
     (r"Microsoft-IIS",      "server",      "IIS",             "web-server"),
     (r"openresty",          "server",      "OpenResty",       "web-server"),
     (r"Caddy",              "server",      "Caddy",           "web-server"),
-    # Lenguajes/frameworks desde headers
+    # Languages and frameworks from headers
     (r"PHP/[\d.]+",         "x-powered-by","PHP",             "language"),
     (r"ASP\.NET",           "x-powered-by","ASP.NET",         "framework"),
     (r"Express",            "x-powered-by","Express.js",      "framework"),
     (r"Next\.js",           "x-powered-by","Next.js",         "framework"),
-    # CDN / proxy
+    # CDN / Proxy
     (r"varnish",            "via",         "Varnish",         "cdn"),
     (r"cloudfront",         "via",         "CloudFront",      "cdn"),
-    # Cookies reveladoras
+    # Disclosing cookies
     (r"PHPSESSID",          "set-cookie",  "PHP",             "language"),
     (r"ASP\.NET_SessionId", "set-cookie",  "ASP.NET",         "framework"),
     (r"JSESSIONID",         "set-cookie",  "Java/Spring",     "framework"),
@@ -35,7 +35,7 @@ SIGNATURES: list[tuple[str, str, str, str]] = [
     (r'Drupal',             "html",        "Drupal",          "cms"),
     (r'Shopify',            "html",        "Shopify",         "ecommerce"),
     (r'Wix\.com',           "html",        "Wix",             "website-builder"),
-    # JS libs en HTML
+    # JS libraries in HTML
     (r'react(?:\.min)?\.js|__REACT',       "html", "React",       "js-framework"),
     (r'vue(?:\.min)?\.js|__VUE__',         "html", "Vue.js",      "js-framework"),
     (r'angular(?:\.min)?\.js|ng-version',  "html", "Angular",     "js-framework"),
@@ -44,7 +44,7 @@ SIGNATURES: list[tuple[str, str, str, str]] = [
     (r'tailwindcss',                        "html", "Tailwind CSS","css-framework"),
     (r'next/dist|__NEXT',                  "html", "Next.js",     "js-framework"),
     (r'nuxt',                               "html", "Nuxt.js",     "js-framework"),
-    # Analytics/tracking en HTML
+    # Analytics / tracking in HTML
     (r'google-analytics\.com|gtag\(',      "html", "Google Analytics", "analytics"),
     (r'googletagmanager\.com',             "html", "Google Tag Manager","analytics"),
     (r'hotjar\.com',                       "html", "Hotjar",      "analytics"),
@@ -69,13 +69,13 @@ def _fetch(domain: str, timeout: int) -> tuple[dict, str] | None:
 def run(domain: str, timeout: int = 10) -> dict:
     headers, html = _fetch(domain, timeout)
     if headers is None:
-        return {"error": f"No se pudo conectar a {domain}"}
+        return {"error": f"Could not connect to {domain}"}
 
-    # Normalizar headers a minúsculas para búsqueda
+    # Normalize headers to lowercase for search
     h = {k.lower(): v for k, v in headers.items()}
-    html_lower = html[:50000].lower()  # limitar para no tardar
+    html_lower = html[:50000].lower()  # limit buffer to optimize performance
 
-    found: dict[str, dict] = {}  # tech -> {categoria, evidencia}
+    found: dict[str, dict] = {}  # tech -> {category, evidence}
 
     for pattern, field, tech, category in SIGNATURES:
         if tech in found:
@@ -93,12 +93,12 @@ def run(domain: str, timeout: int = 10) -> dict:
                 "evidence":  f"{field}: {match.group()[:80]}",
             }
 
-    # Versión PHP desde header si disponible
+    # PHP version from header if available
     php_ver = re.search(r"PHP/([\d.]+)", h.get("x-powered-by", ""), re.IGNORECASE)
     if php_ver and "PHP" in found:
         found["PHP"]["version"] = php_ver.group(1)
 
-    # Agrupar por categoría
+    # Group by category
     by_category: dict[str, list] = {}
     for tech, info in found.items():
         cat = info["category"]

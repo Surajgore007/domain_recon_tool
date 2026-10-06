@@ -2,7 +2,7 @@ import ssl
 import socket
 from datetime import datetime, timezone
 
-# Versiones que se consideran obsoletas
+# Versions considered obsolete or weak
 WEAK_VERSIONS = {"TLSv1", "TLSv1.1", "SSLv3", "SSLv2"}
 
 
@@ -26,8 +26,8 @@ def _check_version(host: str, port: int, version_const, label: str, timeout: int
 def run(domain: str, timeout: int = 10) -> dict:
     port = 443
 
-    # Obtener certificado principal
-    # CERT_OPTIONAL: solicita el cert sin verificarlo, getpeercert() devuelve los datos
+    # Obtain primary certificate
+    # CERT_OPTIONAL: requests certificate without strict verification so getpeercert() returns certificate metadata
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_OPTIONAL
@@ -40,7 +40,7 @@ def run(domain: str, timeout: int = 10) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
-    # Parsear fechas
+    # Parse validity dates
     not_before_raw = cert.get("notBefore", "")
     not_after_raw  = cert.get("notAfter", "")
     try:
@@ -59,11 +59,11 @@ def run(domain: str, timeout: int = 10) -> dict:
     # SANs (Subject Alternative Names)
     sans = [v for t, v in cert.get("subjectAltName", []) if t == "DNS"]
 
-    # Issuer y subject
+    # Issuer and subject extraction
     issuer  = dict(x[0] for x in cert.get("issuer",  []))
     subject = dict(x[0] for x in cert.get("subject", []))
 
-    # Comprobar versiones TLS obsoletas
+    # Probe deprecated TLS protocol versions
     version_checks = []
     try:
         for label, const in [
@@ -95,8 +95,8 @@ def run(domain: str, timeout: int = 10) -> dict:
         "version_support":    version_checks,
         "weak_versions":      weak_supported,
         "issues": (
-            (["Certificado expirado"] if expired else []) +
-            (["Expira en menos de 30 días"] if isinstance(days_left, int) and 0 <= days_left < 30 else []) +
-            ([f"Versiones débiles soportadas: {', '.join(weak_supported)}"] if weak_supported else [])
+            (["Certificate expired"] if expired else []) +
+            (["Certificate expires in less than 30 days"] if isinstance(days_left, int) and 0 <= days_left < 30 else []) +
+            ([f"Weak TLS versions supported: {', '.join(weak_supported)}"] if weak_supported else [])
         ),
     }

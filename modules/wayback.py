@@ -6,7 +6,7 @@ from collections import Counter
 CDX_URL          = "https://web.archive.org/cdx/search/cdx"
 AVAILABILITY_URL = "https://archive.org/wayback/available"
 
-# Extensiones y patrones de endpoints interesantes para OSINT
+# Extensions and interesting endpoint patterns for OSINT reconnaissance
 INTERESTING_PATTERNS = [
     "/admin", "/login", "/api/", "/config", "/.env", "/backup",
     "/wp-admin", "/phpmyadmin", "/.git", "/swagger", "/graphql",
@@ -15,7 +15,7 @@ INTERESTING_PATTERNS = [
 
 
 def _availability(domain: str, timeout: int) -> dict | None:
-    """Consulta rápida de snapshot más reciente vía availability API."""
+    """Fast check for most recent snapshot via Wayback availability API."""
     try:
         resp = requests.get(AVAILABILITY_URL, params={"url": domain},
                             timeout=timeout, headers={"User-Agent": "osint-recon/1.0"})
@@ -29,7 +29,7 @@ def _availability(domain: str, timeout: int) -> dict | None:
 
 
 def _cdx_query(domain: str, timeout: int) -> list | None:
-    """Stream de la CDX API — lee línea a línea para no esperar el payload completo."""
+    """Stream response from CDX API — process line by line to prevent blocking."""
     params = {
         "url":      f"*.{domain}",
         "output":   "json",
@@ -55,15 +55,15 @@ def _cdx_query(domain: str, timeout: int) -> list | None:
 
 
 def run(domain: str, timeout: int = 10) -> dict:
-    # Primero: consulta rápida de disponibilidad
+    # 1. Quick availability query
     snap = _availability(domain, min(timeout, 8))
 
-    # Segundo: CDX para URLs históricas (puede tardar más)
+    # 2. Query CDX for historical URLs (may take longer)
     raw = _cdx_query(domain, timeout)
 
-    # Si ambos fallaron, reportamos lo que sí obtuvimos
+    # If both failed, report error
     if not snap and not raw:
-        return {"error": "No se pudo conectar a archive.org (CDX API lenta o no disponible)"}
+        return {"error": "Could not connect to archive.org (CDX API timed out or unavailable)"}
 
     if not raw or len(raw) < 2:
         result = {"total_snapshots": 0, "urls": [], "interesting": [], "subdomains": [], "mime_breakdown": {}}
@@ -72,7 +72,7 @@ def run(domain: str, timeout: int = 10) -> dict:
             result["latest_timestamp"] = _fmt_date(snap.get("timestamp", "")[:8])
         return result
 
-    # Primera fila es cabecera
+    # First row is table header
     header, *rows = raw
     idx = {h: i for i, h in enumerate(header)}
 
@@ -94,14 +94,14 @@ def run(domain: str, timeout: int = 10) -> dict:
         if host.endswith(domain) and host != domain:
             subdomains.add(host)
 
-    # Endpoints interesantes
+    # Filter interesting endpoints
     interesting = [u for u in urls if any(p in u.lower() for p in INTERESTING_PATTERNS)]
 
-    # Distribución de tipos MIME
+    # MIME type distribution
     mime_counter = Counter(mimetypes)
     mime_breakdown = {k: v for k, v in mime_counter.most_common(8)}
 
-    # Fechas extremas
+    # Date boundaries
     first_seen = min(timestamps)[:8] if timestamps else None  # YYYYMMDD
     last_seen  = max(timestamps)[:8] if timestamps else None
 

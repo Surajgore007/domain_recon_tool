@@ -47,7 +47,7 @@ def _analyze(domain: str, scheme: str, timeout: int) -> dict:
 
 def run(domain: str, timeout: int = 10) -> dict:
     result = _analyze(domain, "https", timeout)
-    # si https falla por error de conexión, intentar http
+    # If https fails due to connection error, attempt http fallback
     if "error" in result:
         http_result = _analyze(domain, "http", timeout)
         return {"https": result, "http": http_result}

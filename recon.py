@@ -1,6 +1,6 @@
 """
-OSINT Recon — reconocimiento pasivo de dominios.
-Solo usar contra infraestructura propia o con autorización explícita.
+OSINT Recon — Passive Domain Reconnaissance Tool.
+Authorized use only: Only scan infrastructure you own or have explicit authorization to test.
 """
 
 import argparse
@@ -34,31 +34,31 @@ MODULES = {
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="OSINT Recon — reconocimiento pasivo de dominios",
-        epilog="Ejemplo: python recon.py example.com --modules dns,crtsh,headers",
+        description="OSINT Recon — Passive Domain Reconnaissance Intelligence CLI",
+        epilog="Example: python recon.py example.com --modules dns,crtsh,headers",
     )
-    p.add_argument("target", help="Dominio objetivo (ej: example.com)")
+    p.add_argument("target", help="Target domain (e.g. example.com)")
     p.add_argument(
         "--modules", "-m",
         default=",".join(MODULES),
-        help=f"Módulos a ejecutar separados por coma. Disponibles: {', '.join(MODULES)}",
+        help=f"Comma-separated modules to execute. Available: {', '.join(MODULES)}",
     )
     p.add_argument(
         "--output", "-o",
         default="reports",
-        help="Directorio de salida (default: reports/)",
+        help="Output directory (default: reports/)",
     )
     p.add_argument(
         "--format", "-f",
         choices=["json", "html", "both"],
         default="both",
-        help="Formato del reporte (default: both)",
+        help="Report export format (default: both)",
     )
     p.add_argument(
         "--timeout", "-t",
         type=int,
         default=10,
-        help="Timeout en segundos por módulo (default: 10)",
+        help="Timeout in seconds per module (default: 10)",
     )
     return p.parse_args()
 
@@ -96,18 +96,18 @@ def print_summary(target: str, results: dict) -> None:
 
     # DNS
     if "dns" in results and "error" not in results["dns"]:
-        t = Table("Tipo", "Registros", box=box.SIMPLE, show_header=True, header_style="bold cyan")
+        t = Table("Type", "Records", box=box.SIMPLE, show_header=True, header_style="bold cyan")
         for rtype, vals in results["dns"].items():
             if vals and not isinstance(vals, dict):
                 t.add_row(rtype, ", ".join(str(v) for v in vals[:3]) + ("…" if len(vals) > 3 else ""))
         if t.row_count:
-            console.print("[bold]DNS[/bold]")
+            console.print("[bold]DNS Records[/bold]")
             console.print(t)
 
     # WHOIS
     if "whois" in results and "error" not in results["whois"]:
         w = results["whois"]
-        console.print("[bold]WHOIS[/bold]")
+        console.print("[bold]WHOIS Registration[/bold]")
         for field in ("registrar", "creation_date", "expiration_date", "country", "org"):
             val = w.get(field)
             if val:
@@ -118,11 +118,11 @@ def print_summary(target: str, results: dict) -> None:
     # crt.sh
     if "crtsh" in results and "error" not in results["crtsh"]:
         subs = results["crtsh"].get("subdomains", [])
-        console.print(f"[bold]Subdominios[/bold]  ({len(subs)} encontrados)")
+        console.print(f"[bold]Subdomains[/bold]  ({len(subs)} discovered)")
         for s in subs[:20]:
             console.print(f"  [dim]·[/dim] {s}")
         if len(subs) > 20:
-            console.print(f"  [dim]… y {len(subs) - 20} más en el reporte[/dim]")
+            console.print(f"  [dim]… and {len(subs) - 20} more in report[/dim]")
         console.print()
 
     # Headers
@@ -134,19 +134,19 @@ def print_summary(target: str, results: dict) -> None:
             missing = https.get("missing_security_headers", [])
             console.print(f"[bold]Security Headers[/bold]  score: [{color}]{score}%[/{color}]")
             if missing:
-                console.print(f"  [red]Ausentes:[/red] {', '.join(missing)}")
+                console.print(f"  [red]Missing:[/red] {', '.join(missing)}")
             console.print()
 
     # Ports
     if "ports" in results and "error" not in results["ports"]:
         open_ = results["ports"].get("open_ports", [])
         risky = results["ports"].get("risky", [])
-        console.print(f"[bold]Puertos abiertos[/bold]  ({len(open_)} detectados)")
+        console.print(f"[bold]Open Ports[/bold]  ({len(open_)} detected)")
         for p in open_:
-            warn = " [yellow]⚠ RIESGO[/yellow]" if p.get("risk") else ""
+            warn = " [yellow]⚠ RISKY[/yellow]" if p.get("risk") else ""
             console.print(f"  [dim]·[/dim] {p['port']}/{p['service']}{warn}")
         if risky:
-            console.print(f"  [red]Puertos de alto riesgo expuestos: {len(risky)}[/red]")
+            console.print(f"  [red]High-risk ports exposed: {len(risky)}[/red]")
         console.print()
 
     # Wayback Machine
@@ -155,13 +155,13 @@ def print_summary(target: str, results: dict) -> None:
         total = wb.get("total_snapshots", 0)
         latest = wb.get("latest_snapshot")
         interesting = wb.get("interesting", [])
-        console.print(f"[bold]Wayback Machine[/bold]  ({total} URLs históricas)")
+        console.print(f"[bold]Wayback Machine[/bold]  ({total} historical URLs)")
         if latest:
-            console.print(f"  [cyan]Último snapshot:[/cyan] {wb.get('latest_timestamp','?')} — {latest}")
+            console.print(f"  [cyan]Latest snapshot:[/cyan] {wb.get('latest_timestamp','?')} — {latest}")
         if wb.get("subdomains"):
-            console.print(f"  [cyan]Subdominios en archivo:[/cyan] {', '.join(wb['subdomains'][:5])}")
+            console.print(f"  [cyan]Archived subdomains:[/cyan] {', '.join(wb['subdomains'][:5])}")
         if interesting:
-            console.print(f"  [yellow]Endpoints interesantes ({len(interesting)}):[/yellow]")
+            console.print(f"  [yellow]Interesting endpoints ({len(interesting)}):[/yellow]")
             for u in interesting[:5]:
                 console.print(f"    [dim]·[/dim] {u}")
         console.print()
@@ -170,11 +170,11 @@ def print_summary(target: str, results: dict) -> None:
     if "tech" in results and "error" not in results["tech"]:
         tech = results["tech"]
         by_cat = tech.get("by_category", {})
-        console.print(f"[bold]Tech Stack[/bold]  ({tech.get('total', 0)} tecnologías detectadas)")
+        console.print(f"[bold]Tech Stack[/bold]  ({tech.get('total', 0)} technologies detected)")
         for cat, techs in by_cat.items():
             console.print(f"  [cyan]{cat:<18}[/cyan] {', '.join(techs)}")
         if not by_cat:
-            console.print("  [dim]Stack no identificado (puede estar obfuscado)[/dim]")
+            console.print("  [dim]Stack unidentified (may be obfuscated)[/dim]")
         console.print()
 
     # Email security
@@ -186,10 +186,10 @@ def print_summary(target: str, results: dict) -> None:
         spf   = em.get("spf",   {})
         dkim  = em.get("dkim",  {})
         dmarc = em.get("dmarc", {})
-        console.print(f"  [cyan]SPF:[/cyan]   {'presente' if spf.get('present') else '[red]AUSENTE[/red]'}  política: {spf.get('policy') or '—'}")
+        console.print(f"  [cyan]SPF:[/cyan]   {'present' if spf.get('present') else '[red]MISSING[/red]'}  policy: {spf.get('policy') or '—'}")
         sels = ", ".join(s["selector"] for s in dkim.get("selectors", []))
-        console.print(f"  [cyan]DKIM:[/cyan]  {'encontrado' if dkim.get('found') else '[red]NO ENCONTRADO[/red]'}  {f'(selectores: {sels})' if sels else ''}")
-        console.print(f"  [cyan]DMARC:[/cyan] {'presente' if dmarc.get('present') else '[red]AUSENTE[/red]'}  política: {dmarc.get('policy') or '—'}")
+        console.print(f"  [cyan]DKIM:[/cyan]  {'found' if dkim.get('found') else '[red]NOT FOUND[/red]'}  {f'(selectors: {sels})' if sels else ''}")
+        console.print(f"  [cyan]DMARC:[/cyan] {'present' if dmarc.get('present') else '[red]MISSING[/red]'}  policy: {dmarc.get('policy') or '—'}")
         for issue in em.get("all_issues", []):
             console.print(f"  [yellow]⚠ {issue}[/yellow]")
         console.print()
@@ -201,9 +201,9 @@ def print_summary(target: str, results: dict) -> None:
         days = cert.get("days_left")
         days_color = "green" if isinstance(days, int) and days > 30 else "yellow" if isinstance(days, int) and days >= 0 else "red"
         console.print(f"[bold]TLS[/bold]  {tls.get('negotiated_version','?')} · {tls.get('cipher',{}).get('name','?')}")
-        console.print(f"  [cyan]Emisor:[/cyan] {cert.get('issuer_org','?')} ({cert.get('issuer_cn','?')})")
-        console.print(f"  [cyan]Vence:[/cyan]  {cert.get('not_after','?')}  [{days_color}]{days} días[/{days_color}]")
-        console.print(f"  [cyan]SANs:[/cyan]   {', '.join(cert.get('sans', [])[:5])}")
+        console.print(f"  [cyan]Issuer:[/cyan] {cert.get('issuer_org','?')} ({cert.get('issuer_cn','?')})")
+        console.print(f"  [cyan]Expires:[/cyan] {cert.get('not_after','?')}  [{days_color}]{days} days[/{days_color}]")
+        console.print(f"  [cyan]SANs:[/cyan]    {', '.join(cert.get('sans', [])[:5])}")
         issues = tls.get("issues", [])
         if issues:
             for issue in issues:
@@ -219,13 +219,13 @@ def main() -> None:
     selected = [m.strip() for m in args.modules.split(",") if m.strip() in MODULES]
 
     if not selected:
-        console.print(f"[red]Módulos inválidos. Disponibles: {', '.join(MODULES)}[/red]")
+        console.print(f"[red]Invalid modules specified. Available: {', '.join(MODULES)}[/red]")
         sys.exit(1)
 
     console.print(Panel(
         f"[bold cyan]OSINT Recon[/bold cyan]\n"
         f"[dim]Target:[/dim]  [yellow]{target}[/yellow]\n"
-        f"[dim]Módulos:[/dim] {', '.join(selected)}",
+        f"[dim]Modules:[/dim] {', '.join(selected)}",
         border_style="cyan",
         expand=False,
     ))
@@ -243,7 +243,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = generate_report(results_full, out_dir, args.format)
 
-    console.print("[green]Reporte guardado:[/green]")
+    console.print("[green]Reports saved successfully:[/green]")
     for fmt, path in paths.items():
         console.print(f"  [cyan]{fmt}[/cyan]  {path}")
 

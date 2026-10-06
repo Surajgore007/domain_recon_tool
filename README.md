@@ -34,7 +34,25 @@ Requires Python 3.10+.
 
 ---
 
-## Usage
+## Web Dashboard (Interactive GUI)
+
+Launch the real-time reconnaissance platform with live multi-threaded progress tracking, executive KPI scorecards, and report exports:
+
+```bash
+# Option 1: Double-click run_gui.bat (Windows)
+
+# Option 2: Run with Python launcher (automatically launches browser)
+python run_gui.py
+
+# Option 3: Run the FastAPI app directly
+python app.py
+```
+
+Dashboard is available at **http://127.0.0.1:8000**.
+
+---
+
+## CLI Usage
 
 ```bash
 # Scan all modules
