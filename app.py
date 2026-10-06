@@ -46,12 +46,8 @@ def debug_info(request: Request):
 @app.middleware("http")
 async def vercel_path_fix(request: Request, call_next):
     response = await call_next(request)
-    matched = request.headers.get("x-matched-path", "")
-    invoke = request.headers.get("x-invoke-path", "")
-    all_keys = ",".join(request.headers.keys())
-    response.headers["X-Vercel-Matched"] = matched
-    response.headers["X-Vercel-Invoke"] = invoke
-    response.headers["X-All-Header-Keys"] = all_keys
+    response.headers["X-Scope-Path"] = str(request.scope.get("path"))
+    response.headers["X-URL-Path"] = str(request.url.path)
     return response
 
 BASE_DIR = Path(__file__).resolve().parent
