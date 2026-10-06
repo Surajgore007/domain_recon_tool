@@ -45,10 +45,13 @@ def debug_info(request: Request):
 
 @app.middleware("http")
 async def vercel_path_fix(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["X-Scope-Path"] = str(request.scope.get("path"))
-    response.headers["X-URL-Path"] = str(request.url.path)
-    return response
+    # If Vercel rewrote using __path__ query param, restore the original client path
+    custom_path = request.query_params.get("__path__")
+    if custom_path:
+        request.scope["path"] = custom_path
+    elif request.scope.get("path") in ("/api/index.py", "/api/index", "/api", "/api/"):
+        request.scope["path"] = "/"
+    return await call_next(request)
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
