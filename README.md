@@ -1,137 +1,128 @@
-# osint-recon
+# 🛡️ Domain Recon Tool (OSINT Recon Platform)
 
-Passive domain reconnaissance tool. Runs five modules in parallel — DNS, WHOIS, subdomain discovery via certificate transparency, HTTP security headers, and port scan — and exports structured JSON + HTML reports.
+> **Passive Domain Intelligence & Perimeter Reconnaissance Platform**  
+> Fast, multi-threaded intelligence gathering with zero paid API keys, structured JSON/HTML reporting, and an Executive Obsidian web dashboard.
 
-No SIEM, no paid APIs, no installation beyond Python.
-
-> **Use only against infrastructure you own or have explicit written permission to test.**
-
----
-
-## What it does
-
-| Module | Source | What it finds |
-|--------|--------|---------------|
-| **dns** | System resolver | A, AAAA, MX, NS, TXT, CNAME, SOA records |
-| **whois** | WHOIS servers | Registrar, dates, org, emails, name servers |
-| **crtsh** | [crt.sh](https://crt.sh) (CT logs) | Subdomains from certificate transparency — passive, no target contact |
-| **headers** | HTTP/HTTPS | Security header presence/absence + score (0–100%) |
-| **ports** | TCP connect | 18 common ports; flags risky services (Telnet, SMB, RDP, Redis, MongoDB) |
-
-![Demo](assets/demo_recon.svg)
+🌐 **Live Web Application:** [https://domainrecontool.vercel.app](https://domainrecontool.vercel.app)  
+📁 **Repository:** [https://github.com/Surajgore007/domain_recon_tool](https://github.com/Surajgore007/domain_recon_tool)
 
 ---
 
-## Install
+## 💡 What Is This Project?
+
+**Domain Recon Tool** is an automated reconnaissance tool designed for security analysts, penetration testers, and developers to analyze external attack surfaces and domain configurations.
+
+It performs passive reconnaissance across **9 parallel vectors** without touching paid intelligence feeds or requiring heavy SIEM setups.
+
+---
+
+## ⚡ Key Modules (What It Finds)
+
+| Module | Source / Method | What It Analyzes |
+| :--- | :--- | :--- |
+| **🌐 DNS** | System Resolver | Resolves A, AAAA, MX, NS, TXT, CNAME, and SOA records |
+| **🏢 WHOIS** | Public WHOIS | Registrar info, creation/expiration dates, nameservers, contact org |
+| **🔍 Subdomains** | Certificate Transparency (`crt.sh`) | Passively discovers subdomains from public SSL/TLS certificate logs |
+| **🛡️ Headers** | HTTP / HTTPS Probe | Analyzes 7 defensive headers (HSTS, CSP, X-Frame-Options, etc.) + 0–100% score |
+| **🔌 Ports** | Parallel TCP Connect | Checks 18 common ports; flags critical risks (SMB 445, RDP 3389, Telnet 23, Redis, MongoDB) |
+| **🔒 TLS / SSL** | SSL Handshake | Validates cipher suites, expiration countdown, issuer, and SANs |
+| **✉️ Email Security** | DNS TXT Probes | Evaluates SPF policies, common DKIM selectors, and DMARC enforcement |
+| **⚙️ Tech Stack** | HTTP Headers & Signatures | Fingerprints web servers (Nginx, Apache, Cloudflare), frameworks, and CMS |
+| **⏳ Wayback** | Archive.org CDX API | Extracts historical snapshots and exposes sensitive endpoints (`.env`, `admin`, `api`) |
+
+---
+
+## 🖥️ Interactive Web Dashboard (GUI)
+
+The web dashboard features an **Executive Obsidian Slate** UI with zero neon clichés, providing real-time Server-Sent Events (SSE) streaming progress, KPI scorecards, interactive deep-dive tabs, and 1-click report exports.
+
+### Running Locally:
 
 ```bash
-git clone https://github.com/R-oyo/osint-recon
-cd osint-recon
+# 1. Clone repository
+git clone https://github.com/Surajgore007/domain_recon_tool.git
+cd domain_recon_tool
+
+# 2. Install dependencies
 pip install -r requirements.txt
-```
 
-Requires Python 3.10+.
+# 3. Launch Dashboard:
+# Option A (Windows shortcut):
+run_gui.bat
 
----
-
-## Web Dashboard (Interactive GUI)
-
-Launch the real-time reconnaissance platform with live multi-threaded progress tracking, executive KPI scorecards, and report exports:
-
-```bash
-# Option 1: Double-click run_gui.bat (Windows)
-
-# Option 2: Run with Python launcher (automatically launches browser)
+# Option B (Python auto-launch):
 python run_gui.py
 
-# Option 3: Run the FastAPI app directly
+# Option C (FastAPI server directly):
 python app.py
 ```
 
-Dashboard is available at **http://127.0.0.1:8000**.
+Open your browser at **http://127.0.0.1:8000**.
 
 ---
 
-## CLI Usage
+## 💻 CLI Usage (Terminal Mode)
+
+You can also run reconnaissance directly from the command line:
 
 ```bash
-# Scan all modules
+# Run all 9 modules
 python recon.py example.com
 
-# Specific modules
-python recon.py example.com --modules dns,crtsh,headers
+# Run specific modules only
+python recon.py example.com --modules dns,crtsh,headers,email
 
-# Custom output dir and format
-python recon.py example.com --output /tmp/reports --format json
-
-# Longer timeout for large domains (crt.sh can be slow)
-python recon.py example.com --timeout 30
+# Custom timeout and output format
+python recon.py example.com --timeout 20 --format both --output reports
 ```
 
-### Options
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--modules` / `-m` | all | Comma-separated: `dns,whois,crtsh,headers,ports` |
-| `--output` / `-o` | `reports/` | Output directory for reports |
-| `--format` / `-f` | `both` | `json`, `html`, or `both` |
-| `--timeout` / `-t` | `10` | Seconds per module (increase for large domains) |
+### CLI Flags:
+- `--modules` / `-m`: Comma-separated list (`dns,whois,crtsh,headers,ports,tls,email,tech,wayback`). Default: `all`.
+- `--output` / `-o`: Directory to store generated reports (default: `reports/`).
+- `--format` / `-f`: Output format: `json`, `html`, or `both`.
+- `--timeout` / `-t`: Timeout in seconds per module (default: `10`).
 
 ---
 
-## Output
+## 📊 Reports & Output
 
-Each run saves two files in `reports/`:
-
-```
-reports/
-└── example_com_20260527_120000.json   # Machine-readable, all raw data
-└── example_com_20260527_120000.html   # Self-contained HTML report, dark theme
-```
-
-The HTML report includes summary cards, DNS table, WHOIS fields, subdomain list, security header score with visual bar, and open ports with risk tagging.
-
-![Modules demo](assets/demo_modules.svg)
+Every scan automatically generates structured reports in `reports/`:
+- **`target_YYYYMMDD_HHMMSS.json`**: Machine-readable raw JSON data.
+- **`target_YYYYMMDD_HHMMSS.html`**: Self-contained, dark-mode visual HTML report suitable for client delivery.
 
 ---
 
-## Security headers score
-
-Checks 7 headers: `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-XSS-Protection`.
-
-Score = (present / 7) × 100. Missing headers appear highlighted in the report.
-
-## Port scan scope
-
-Checks 18 common ports with parallel TCP connect. Flags five as high-risk when open:
-
-| Port | Service | Why it's flagged |
-|------|---------|-----------------|
-| 23 | Telnet | Plaintext protocol |
-| 445 | SMB | Common ransomware vector |
-| 3389 | RDP | Exposed remote desktop |
-| 6379 | Redis | Often runs unauthenticated |
-| 27017 | MongoDB | Often runs unauthenticated |
-
----
-
-## Project structure
+## 📂 Project Structure
 
 ```
-osint-recon/
-├── recon.py              # CLI — argument parsing, orchestration, terminal output
+domain_recon_tool/
+├── app.py                  # FastAPI web server (REST + SSE streaming)
+├── run_gui.py              # Auto-launch Python script for local GUI
+├── run_gui.bat             # 1-click Windows batch launcher
+├── recon.py                # Command-line interface orchestrator
+├── reporter.py             # JSON and HTML report generation engine
+├── vercel.json             # Vercel serverless routing configuration
+├── requirements.txt        # Python package dependencies
+├── api/
+│   └── index.py            # Vercel serverless ASGI entrypoint
 ├── modules/
-│   ├── dns_module.py     # DNS record enumeration via dnspython
-│   ├── whois_module.py   # WHOIS lookup via python-whois
-│   ├── crtsh_module.py   # Subdomain discovery via crt.sh API
-│   ├── headers_module.py # HTTP security header analysis
-│   └── portscan.py       # Parallel TCP port scan
-├── reporter.py           # JSON + HTML report generation
-└── reports/              # Output directory (gitignored except .gitkeep)
+│   ├── dns_module.py       # DNS enumeration
+│   ├── whois_module.py     # WHOIS lookup
+│   ├── crtsh_module.py     # Certificate Transparency subdomain discovery
+│   ├── headers_module.py   # HTTP security headers audit
+│   ├── portscan.py         # Perimeter port & service scanner
+│   ├── tls_module.py       # TLS/SSL cryptographic assessment
+│   ├── email_security.py   # SPF, DKIM, and DMARC analyzer
+│   ├── tech_fingerprint.py # Technology stack signature detection
+│   └── wayback.py          # Historical archive endpoint discovery
+└── static/
+    ├── index.html          # Executive Obsidian dashboard SPA
+    ├── css/style.css       # Obsidian Slate styling & design system
+    └── js/app.js           # Live SSE stream receiver & interactive UI logic
 ```
 
-## Related tools
+---
 
-- [log-analyzer](https://github.com/R-oyo/log-analyzer) — detect attacks in auth.log, Windows Event Log, access.log
-- [ticket-risk-tracker](https://github.com/R-oyo/ticket-risk-tracker) — track and escalate findings as risk tickets
-- [security-ops-lab](https://github.com/R-oyo/security-ops-lab) — integrated dashboard combining log analysis, tickets, and compliance
+## ⚖️ Legal Disclaimer
+
+*This tool is intended strictly for authorized security auditing, defensive assessment, and authorized educational research. Always obtain written authorization before scanning third-party infrastructure.*
