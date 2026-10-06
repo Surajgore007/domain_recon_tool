@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Request
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -32,16 +32,22 @@ app = FastAPI(
     version="2.0.0"
 )
 
+@app.get("/debug-info")
+@app.get("/api/debug-info")
+def debug_info(request: Request):
+    return {
+        "scope_path": request.scope.get("path"),
+        "url_path": request.url.path,
+        "x_matched_path": request.headers.get("x-matched-path"),
+        "x_forwarded_uri": request.headers.get("x-forwarded-uri"),
+        "headers": {k: v for k, v in request.headers.items() if "auth" not in k.lower()}
+    }
+
 @app.middleware("http")
-async def vercel_path_fix(request, call_next):
-    matched_path = request.headers.get("x-matched-path")
-    if matched_path:
-        clean_path = matched_path.split("?")[0]
-        request.scope["path"] = clean_path
-    elif request.scope.get("path") in ("/api/index.py", "/api", "/api/"):
+async def vercel_path_fix(request: Request, call_next):
+    # Only if path is explicitly the lambda filename without route, serve root
+    if request.scope.get("path") in ("/api/index.py", "/api/index"):
         request.scope["path"] = "/"
-    elif request.scope.get("path", "").startswith("/api/index.py/"):
-        request.scope["path"] = request.scope["path"][len("/api/index.py"):]
     return await call_next(request)
 
 BASE_DIR = Path(__file__).resolve().parent
