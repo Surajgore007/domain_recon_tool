@@ -45,10 +45,14 @@ def debug_info(request: Request):
 
 @app.middleware("http")
 async def vercel_path_fix(request: Request, call_next):
-    # Only if path is explicitly the lambda filename without route, serve root
-    if request.scope.get("path") in ("/api/index.py", "/api/index"):
-        request.scope["path"] = "/"
-    return await call_next(request)
+    response = await call_next(request)
+    matched = request.headers.get("x-matched-path", "")
+    invoke = request.headers.get("x-invoke-path", "")
+    all_keys = ",".join(request.headers.keys())
+    response.headers["X-Vercel-Matched"] = matched
+    response.headers["X-Vercel-Invoke"] = invoke
+    response.headers["X-All-Header-Keys"] = all_keys
+    return response
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
