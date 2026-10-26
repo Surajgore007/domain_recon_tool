@@ -656,16 +656,32 @@
     rootNode.x = 0;
     rootNode.y = 0;
 
-    // 2. IP Addresses (from dns.A, dns.AAAA, ports.ip)
+    // 2. IP Addresses (from dns.A, dns.AAAA, ports.ip, crtsh.subdomain_ips)
     const ipList = new Set();
     if (mods.dns?.A) mods.dns.A.forEach(ip => ipList.add(ip));
     if (mods.dns?.AAAA) mods.dns.AAAA.forEach(ip => ipList.add(ip));
     if (mods.ports?.ip) ipList.add(mods.ports.ip);
+    if (mods.crtsh?.subdomain_ips) {
+      Object.values(mods.crtsh.subdomain_ips).forEach(ip => ipList.add(ip));
+    }
+
+    // Lookup table for IP intelligence
+    const ipIntelMap = new Map();
+    (mods.dns?.ip_intelligence || []).forEach(intel => ipIntelMap.set(intel.ip, intel));
+    if (mods.ports?.ip && mods.ports?.ip_info) {
+      const existing = ipIntelMap.get(mods.ports.ip) || {};
+      ipIntelMap.set(mods.ports.ip, { ...existing, ...mods.ports.ip_info, ip: mods.ports.ip });
+    }
 
     ipList.forEach(ip => {
+      const intel = ipIntelMap.get(ip) || {};
       const ipNode = addNode(`ip:${ip}`, ip, 'ip', {
         title: 'Resolved IP Address',
         ip: ip,
+        asn: intel.asn || 'ASN Lookup Available',
+        isp: intel.isp || intel.org || 'Hosting Provider',
+        location: [intel.city, intel.country].filter(Boolean).join(', ') || 'Global',
+        ptr: intel.ptr || null,
         ports: (mods.ports?.open_ports || []).map(p => `${p.port}/${p.service}`).join(', ') || 'No open ports detected'
       });
       addEdge(target, `ip:${ip}`, 'RESOLVES_TO');
@@ -707,13 +723,22 @@
 
     // Limit to reasonable count to avoid graph explosion while preserving diversity
     const subList = Array.from(subdomains).slice(0, 48);
+    const subIpMap = mods.crtsh?.subdomain_ips || {};
+
     subList.forEach(sub => {
+      const mappedIp = subIpMap[sub];
       addNode(`sub:${sub}`, sub, 'subdomain', {
         title: 'Discovered Subdomain',
         parent: target,
+        mappedIp: mappedIp || null,
         source: 'Certificate Transparency / SANs'
       });
       addEdge(target, `sub:${sub}`, 'SUBDOMAIN');
+
+      // If this subdomain resolved to an IP, link them on the graph!
+      if (mappedIp) {
+        addEdge(`sub:${sub}`, `ip:${mappedIp}`, 'HOSTED_ON');
+      }
     });
 
     // 5. Mail Infrastructure (MX records)
@@ -1408,16 +1433,25 @@
     tbody.innerHTML = '';
 
     const props = [];
+    const scanMods = state.currentScan?.modules || {};
     if (node.type === 'domain') {
       props.push({ k: 'Entity Class', v: 'Apex Domain Target' });
-      props.push({ k: 'Passive Scan', v: 'Evaluated' });
+      if (scanMods.whois?.org) props.push({ k: 'Organization', v: scanMods.whois.org });
+      if (scanMods.whois?.registrar) props.push({ k: 'Registrar', v: scanMods.whois.registrar });
+      if (scanMods.whois?.country) props.push({ k: 'Country', v: scanMods.whois.country });
+      if (scanMods.whois?.expiration_date) props.push({ k: 'Expires', v: scanMods.whois.expiration_date.split('T')[0] });
     } else if (node.type === 'subdomain') {
       props.push({ k: 'Entity Class', v: 'Subdomain' });
       props.push({ k: 'Apex Domain', v: node.meta.parent || '—' });
+      if (node.meta.mappedIp) props.push({ k: 'Resolved IP', v: node.meta.mappedIp });
       props.push({ k: 'Discovery Feed', v: node.meta.source || 'crt.sh' });
     } else if (node.type === 'ip') {
       props.push({ k: 'Entity Class', v: 'Network Endpoint (IPv4/v6)' });
       props.push({ k: 'IP Address', v: node.meta.ip });
+      if (node.meta.asn) props.push({ k: 'Autonomous System', v: node.meta.asn });
+      if (node.meta.isp) props.push({ k: 'Hosting / ISP', v: node.meta.isp });
+      if (node.meta.location) props.push({ k: 'Geographic Location', v: node.meta.location });
+      if (node.meta.ptr) props.push({ k: 'Reverse DNS (PTR)', v: node.meta.ptr });
       props.push({ k: 'Exposed Ports', v: node.meta.ports || 'None detected' });
     } else if (node.type === 'port') {
       props.push({ k: 'Port / Protocol', v: node.label });
@@ -1426,6 +1460,7 @@
       props.push({ k: 'Risk Classification', v: node.meta.risk ? 'CRITICAL RISKY' : 'Standard' });
     } else if (node.type === 'mx') {
       props.push({ k: 'Entity Class', v: 'Mail Server (MX)' });
+      if (scanMods.email?.mx_provider) props.push({ k: 'Mail Provider', v: scanMods.email.mx_provider });
       props.push({ k: 'SPF Posture', v: node.meta.spfEnforced });
       props.push({ k: 'DMARC Posture', v: node.meta.dmarcEnforced });
     } else if (node.type === 'ns') {
@@ -1613,7 +1648,9 @@
   // 2. DNS Tab
   function renderDnsTab(dnsData) {
     const tbody = document.querySelector('#table-dns tbody');
+    const intelContainer = document.getElementById('dns-ip-intel-container');
     tbody.innerHTML = '';
+    if (intelContainer) intelContainer.innerHTML = '';
     const dnsCounter = document.getElementById('count-dns');
 
     if (!dnsData || dnsData.error) {
@@ -1622,8 +1659,33 @@
       return;
     }
 
+    // Render IP Geolocation & ASN Intelligence Cards
+    const intelList = dnsData.ip_intelligence || [];
+    if (intelContainer && intelList.length > 0) {
+      let intelHtml = `<div class="kv-grid" style="margin-bottom: 0.5rem;">`;
+      intelList.forEach(item => {
+        intelHtml += `
+          <div class="kv-item" style="border-left: 3px solid var(--accent-teal);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span class="kv-key">PRIMARY HOST ENDPOINT</span>
+              <span class="badge badge-safe">${item.ip}</span>
+            </div>
+            <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); margin-bottom: 3px;">
+              ${escapeHtml(item.isp || item.org || 'Hosting Provider')}
+            </div>
+            <div style="font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 2px;">
+              <span style="color: var(--accent-teal); font-family: var(--font-mono);">${escapeHtml(item.asn || '')}</span> · ${escapeHtml(item.city ? `${item.city}, ` : '')}${escapeHtml(item.country || 'Global')}
+            </div>
+            ${item.ptr ? `<div style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono);">PTR: ${escapeHtml(item.ptr)}</div>` : ''}
+          </div>
+        `;
+      });
+      intelHtml += `</div>`;
+      intelContainer.innerHTML = intelHtml;
+    }
+
     let totalRecords = 0;
-    const types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
+    const types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA', 'CAA'];
     types.forEach(type => {
       const records = dnsData[type];
       if (Array.isArray(records) && records.length > 0) {
@@ -1663,13 +1725,14 @@
     }
 
     const fields = [
-      { key: 'Registrar', val: whois.registrar },
-      { key: 'Creation Date', val: whois.creation_date },
-      { key: 'Expiration Date', val: whois.expiration_date },
-      { key: 'Updated Date', val: whois.updated_date },
-      { key: 'Registrant Organization', val: whois.org },
-      { key: 'Country', val: whois.country },
+      { key: 'Registrant Organization', val: whois.org || 'Not Publicly Disclosed' },
+      { key: 'Registrar', val: whois.registrar || '—' },
+      { key: 'Registry Source', val: whois.source || 'RDAP + WHOIS Hybrid' },
+      { key: 'Country', val: whois.country || '—' },
       { key: 'Domain Status', val: Array.isArray(whois.status) ? whois.status.join(', ') : whois.status },
+      { key: 'Creation Date', val: whois.creation_date ? whois.creation_date.split('T')[0] : '—' },
+      { key: 'Expiration Date', val: whois.expiration_date ? whois.expiration_date.split('T')[0] : '—' },
+      { key: 'Updated Date', val: whois.updated_date ? whois.updated_date.split('T')[0] : '—' },
       { key: 'Name Servers', val: Array.isArray(whois.name_servers) ? whois.name_servers.join(', ') : whois.name_servers },
       { key: 'Contact Emails', val: Array.isArray(whois.emails) ? whois.emails.join(', ') : whois.emails },
     ];
@@ -1695,18 +1758,21 @@
     container.innerHTML = '';
 
     const subs = crtsh?.subdomains || [];
+    const ipMap = crtsh?.subdomain_ips || {};
     badge.textContent = `${subs.length} discovered`;
 
     if (subs.length === 0) {
-      container.innerHTML = `<div style="color: var(--text-dim); padding: 1rem;">${crtsh?.error || 'No subdomains found in Certificate Transparency logs'}</div>`;
+      container.innerHTML = `<div style="color: var(--text-dim); padding: 1rem;">${crtsh?.error || crtsh?.note || 'No subdomains found in Certificate Transparency logs'}</div>`;
       return;
     }
 
     subs.forEach(s => {
       const chip = document.createElement('div');
       chip.className = 'subdomain-chip';
+      const mappedIp = ipMap[s];
       chip.innerHTML = `
         <span>${escapeHtml(s)}</span>
+        ${mappedIp ? `<span style="color: var(--accent-teal); font-size: 0.68rem; background: var(--bg-surface-sunken); padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid var(--border-subtle); font-family: var(--font-mono);">${escapeHtml(mappedIp)}</span>` : ''}
         <button class="copy-btn" title="Copy subdomain" onclick="navigator.clipboard.writeText('${escapeQuotes(s)}'); this.textContent='✓'; setTimeout(()=>this.textContent='📋', 1200);">📋</button>
       `;
       container.appendChild(chip);
@@ -1777,11 +1843,36 @@
       return;
     }
 
+    const ipInfo = portsData.ip_info || {};
+    const ipStr = portsData.ip || 'Unknown';
+    const assessment = portsData.assessment || 'Perimeter audit complete.';
+
     const openPorts = portsData.open_ports || [];
     const openSet = new Map();
     openPorts.forEach(p => openSet.set(p.port, p));
 
     label.textContent = `${openPorts.length} open ports detected`;
+
+    // Render ASN & Host Provider Banner
+    let hostBanner = document.getElementById('ports-host-banner');
+    if (!hostBanner) {
+      hostBanner = document.createElement('div');
+      hostBanner.id = 'ports-host-banner';
+      grid.parentNode.insertBefore(hostBanner, grid);
+    }
+    hostBanner.innerHTML = `
+      <div style="background: var(--bg-surface-sunken); border: 1px solid var(--border-default); border-radius: 8px; padding: 0.85rem 1.15rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+          <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">${escapeHtml(ipStr)} <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-sans);">· ${escapeHtml(ipInfo.isp || ipInfo.org || 'Perimeter Host')}</span></div>
+          <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+            <span style="color: var(--accent-teal); font-family: var(--font-mono);">${escapeHtml(ipInfo.asn || '')}</span> · ${escapeHtml(ipInfo.city ? `${ipInfo.city}, ` : '')}${escapeHtml(ipInfo.country || 'Global')}
+          </div>
+        </div>
+        <div style="font-size: 0.78rem; color: ${portsData.risky && portsData.risky.length > 0 ? 'var(--status-danger)' : 'var(--text-muted)'}; max-width: 380px; text-align: right;">
+          ${escapeHtml(assessment)}
+        </div>
+      </div>
+    `;
 
     const standardPorts = [
       { port: 21, svc: 'FTP' },
@@ -1847,6 +1938,7 @@
       { key: 'Valid From', val: cert.not_before || 'N/A' },
       { key: 'Valid Until (Expiry)', val: cert.not_after || 'N/A' },
       { key: 'Days Remaining', val: cert.days_left !== undefined ? `${cert.days_left} days` : 'N/A' },
+      { key: 'Trust Chain Verification', val: cert.trust_verified === false ? 'Failed / Self-Signed' : 'Verified Valid' },
     ];
 
     fields.forEach(f => {
@@ -1888,16 +1980,19 @@
     const spf = email.spf || {};
     const dmarc = email.dmarc || {};
     const dkim = email.dkim || {};
+    const isSpoofable = email.spoofing_vulnerable;
 
     const fields = [
+      { key: 'Mail Security Provider', val: email.mx_provider || 'Independent / None' },
+      { key: 'Executive Spoofing Risk', val: isSpoofable ? 'HIGH VULNERABILITY (Spoofable)' : 'PROTECTED (DMARC Enforced)' },
       { key: 'SPF Record Configured', val: spf.present ? 'Yes' : 'No' },
       { key: 'SPF Policy Enforced', val: spf.policy || 'None' },
       { key: 'Raw SPF Record', val: spf.record || '—' },
       { key: 'DMARC Record Configured', val: dmarc.present ? 'Yes' : 'No' },
       { key: 'DMARC Policy Enforcement', val: dmarc.policy || 'None' },
-      { key: 'DMARC Enforcement (pct)', val: dmarc.pct ? `${dmarc.pct}%` : '—' },
       { key: 'DMARC Aggregate Reporting (rua)', val: dmarc.rua || '—' },
-      { key: 'DKIM Selector Discovery', val: dkim.found ? `Found (${(dkim.selectors || []).map(s => s.selector).join(', ')})` : 'No standard selectors' },
+      { key: 'DKIM Selector Discovery', val: dkim.found ? `Discovered (${(dkim.selectors || []).map(s => s.selector).join(', ')})` : 'No standard selectors found' },
+      { key: 'Resolved MX Mail Servers', val: (email.mx_records || []).join('\n') || 'None Configured' },
     ];
 
     fields.forEach(f => {

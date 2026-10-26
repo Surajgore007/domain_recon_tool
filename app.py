@@ -98,39 +98,52 @@ def summarize_module_result(mod: str, data: dict) -> dict:
     
     if mod == "dns":
         count = sum(len(v) for v in data.values() if isinstance(v, list))
-        return {"status": "ok", "summary": f"{count} DNS records resolved"}
+        intel = data.get("ip_intelligence", [])
+        if intel and intel[0].get("asn"):
+            asn_short = intel[0]["asn"].split()[0]
+            country = intel[0].get("country", "")
+            return {"status": "ok", "summary": f"{count} records · {asn_short} ({country})"}
+        return {"status": "ok", "summary": f"{count} DNS records cataloged"}
     elif mod == "whois":
-        reg = data.get("registrar") or "Unknown Registrar"
-        exp = data.get("expiration_date") or ""
+        org = data.get("org")
+        reg = data.get("registrar") or "Registrar Unknown"
+        if org and org != "REDACTED FOR PRIVACY":
+            return {"status": "ok", "summary": f"{org} ({reg})"}
         return {"status": "ok", "summary": f"Registrar: {reg}"}
     elif mod == "crtsh":
         subs = len(data.get("subdomains", []))
-        return {"status": "ok", "summary": f"{subs} subdomains discovered"}
+        mapped = len(data.get("subdomain_ips", {}))
+        return {"status": "ok", "summary": f"{subs} subdomains discovered ({mapped} mapped IPs)"}
     elif mod == "headers":
         https_data = data.get("https", {})
         score = https_data.get("security_score", 0)
-        return {"status": "ok", "summary": f"Security score: {score}%"}
+        server = https_data.get("server") or "Server Hidden"
+        return {"status": "ok", "summary": f"Score {score}% · {server}"}
     elif mod == "ports":
         open_p = len(data.get("open_ports", []))
         risky_p = len(data.get("risky", []))
-        return {"status": "ok", "summary": f"{open_p} open ports ({risky_p} risky)"}
+        if risky_p > 0:
+            return {"status": "ok", "summary": f"{open_p} open ports (⚠ {risky_p} HIGH RISK)"}
+        return {"status": "ok", "summary": f"{open_p} perimeter ports open"}
     elif mod == "tls":
         cert = data.get("cert", {})
         days = cert.get("days_left", "?")
         ver = data.get("negotiated_version", "TLS")
-        return {"status": "ok", "summary": f"{ver} · {days} days valid"}
+        issuer = cert.get("issuer_org") or "Issuer"
+        return {"status": "ok", "summary": f"{ver} · {issuer} ({days}d left)"}
     elif mod == "email":
         score = data.get("score", 0)
-        spf = "SPF✓" if data.get("spf", {}).get("present") else "SPF✗"
-        dmarc = "DMARC✓" if data.get("dmarc", {}).get("present") else "DMARC✗"
-        return {"status": "ok", "summary": f"Score {score}% ({spf}, {dmarc})"}
+        vulnerable = data.get("spoofing_vulnerable", False)
+        status_tag = "Spoofable!" if vulnerable else "Protected"
+        return {"status": "ok", "summary": f"Score {score}% · {status_tag}"}
     elif mod == "tech":
         tot = data.get("total", 0)
-        return {"status": "ok", "summary": f"{tot} technologies detected"}
+        cats = len(data.get("by_category", {}))
+        return {"status": "ok", "summary": f"{tot} tech signatures detected ({cats} categories)"}
     elif mod == "wayback":
         snaps = data.get("total_snapshots", 0)
         inter = len(data.get("interesting", []))
-        return {"status": "ok", "summary": f"{snaps} snapshots, {inter} endpoints"}
+        return {"status": "ok", "summary": f"{snaps} snapshots archived ({inter} endpoints)"}
     return {"status": "ok", "summary": "Finished successfully"}
 
 @app.get("/api/modules")
