@@ -16,19 +16,30 @@ It performs passive reconnaissance across **9 parallel vectors** without touchin
 
 ---
 
-## ⚡ Key Modules (What It Finds)
+## ⚡ Key Intelligence Modules (What It Finds)
 
 | Module | Source / Method | What It Analyzes |
 | :--- | :--- | :--- |
-| **🌐 DNS** | System Resolver | Resolves A, AAAA, MX, NS, TXT, CNAME, and SOA records |
-| **🏢 WHOIS** | Public WHOIS | Registrar info, creation/expiration dates, nameservers, contact org |
-| **🔍 Subdomains** | Certificate Transparency (`crt.sh`) | Passively discovers subdomains from public SSL/TLS certificate logs |
-| **🛡️ Headers** | HTTP / HTTPS Probe | Analyzes 7 defensive headers (HSTS, CSP, X-Frame-Options, etc.) + 0–100% score |
-| **🔌 Ports** | Parallel TCP Connect | Checks 18 common ports; flags critical risks (SMB 445, RDP 3389, Telnet 23, Redis, MongoDB) |
-| **🔒 TLS / SSL** | SSL Handshake | Validates cipher suites, expiration countdown, issuer, and SANs |
-| **✉️ Email Security** | DNS TXT Probes | Evaluates SPF policies, common DKIM selectors, and DMARC enforcement |
-| **⚙️ Tech Stack** | HTTP Headers & Signatures | Fingerprints web servers (Nginx, Apache, Cloudflare), frameworks, and CMS |
-| **⏳ Wayback** | Archive.org CDX API | Extracts historical snapshots and exposes sensitive endpoints (`.env`, `admin`, `api`) |
+| **🌐 DNS & IP Intel** | DNS + IP-API Geolocation | Resolves A, AAAA, MX, NS, TXT, CNAME, SOA, and CAA records; enriches primary IP with ASN, ISP, country, city, and reverse PTR |
+| **🏢 WHOIS** | Hybrid RDAP (HTTPS) + Socket | Resilient domain registration extraction (registrar, created/expiration dates, nameservers, organization) with 100% serverless/cloud compatibility |
+| **🔍 Subdomains** | crt.sh + HackerTarget Passive DNS | Discovers subdomains from certificate transparency logs and passive DNS with live resolved IP address mapping (`HOSTED_ON`) |
+| **🛡️ Headers** | HTTP / HTTPS Audit | Analyzes 7 defensive headers (HSTS, CSP, X-Frame-Options, etc.), server version disclosures, 0–100% score, and copy-paste remediation directives |
+| **🔌 Ports** | Parallel TCP Connect | Scans common perimeter ports; checks reachability, flags risky exposures (SMB, RDP, Telnet, Redis, MongoDB), and assesses host risk |
+| **🔒 TLS / SSL** | SSL Handshake + DER Decoder | Validates cipher suites, protocol versions (TLS 1.0–1.3), expiration countdown, issuer, and SANs; resilient against expired/self-signed certs |
+| **✉️ Email Security** | DNS SPF / DKIM / DMARC | Audits MX mail providers, probes 19 DKIM selectors, checks DMARC enforcement policies, and computes an explicit Domain Spoofing Risk verdict |
+| **⚙️ Tech Stack** | HTTP Headers & Signatures | Fingerprints 60+ technologies across web servers (Nginx, Apache, GWS, Cloudflare), languages (PHP), frontend frameworks, CMS, and analytics |
+| **⏳ Wayback** | Archive.org CDX API | Extracts historical snapshots and exposes sensitive historical routes (`.env`, `admin`, `api`, `config`, `.git`) |
+
+---
+
+## 🌐 Interactive Force-Directed Topology Graph
+
+The web dashboard includes an interactive force-directed canvas graph that maps the target domain's perimeter infrastructure:
+- **Central Domain Node**: Core apex target.
+- **Subdomain Nodes**: Discovered child domains linked to parent infrastructure.
+- **IP Infrastructure Nodes**: Enriched with hosting provider, ASN, and country location, with direct `HOSTED_ON` links to resolving subdomains.
+- **Nameservers & Mail Exchangers**: Visual mapping of DNS and mail routing redundancy.
+
 
 ---
 
