@@ -43,14 +43,23 @@ The web dashboard features an **Executive Obsidian Slate** UI with zero neon cli
 git clone https://github.com/Surajgore007/domain_recon_tool.git
 cd domain_recon_tool
 
-# 2. Install dependencies
+# 2. (Recommended) Create and activate virtual environment
+# On Windows:
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# On Linux / macOS:
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 3. Launch Dashboard:
-# Option A (Windows shortcut):
+# 4. Launch Dashboard:
+# Option A (Windows 1-click):
 run_gui.bat
 
-# Option B (Python auto-launch):
+# Option B (Python launcher - auto-opens browser):
 python run_gui.py
 
 # Option C (FastAPI server directly):
@@ -63,9 +72,13 @@ Open your browser at **http://127.0.0.1:8000**.
 
 ## 💻 CLI Usage (Terminal Mode)
 
-You can also run reconnaissance directly from the command line:
+You can also run reconnaissance directly from the command line. Make sure your virtual environment is active so required dependencies (`rich`, `dnspython`, `requests`, etc.) are accessible:
 
 ```bash
+# Ensure virtual environment is active
+# Windows: .\.venv\Scripts\Activate.ps1
+# Linux/macOS: source .venv/bin/activate
+
 # Run all 9 modules
 python recon.py example.com
 
@@ -88,7 +101,23 @@ python recon.py example.com --timeout 20 --format both --output reports
 
 Every scan automatically generates structured reports in `reports/`:
 - **`target_YYYYMMDD_HHMMSS.json`**: Machine-readable raw JSON data.
-- **`target_YYYYMMDD_HHMMSS.html`**: Self-contained, dark-mode visual HTML report suitable for client delivery.
+- **`target_YYYYMMDD_HHMMSS.html`**: Self-contained, dark-mode visual HTML report suitable for client delivery and offline auditing.
+
+---
+
+## ☁️ Deployment
+
+### 1. Vercel (Serverless)
+The repository is pre-configured with `vercel.json` and `api/index.py`:
+- Push to GitHub and import the repository into [Vercel](https://vercel.com).
+- Vercel automatically runs the FastAPI backend via AWS Lambda serverless functions.
+- Reports automatically fallback to `/tmp/osint_reports` on serverless read-only filesystems.
+
+### 2. Render / Railway / Heroku (PaaS Containers)
+The repository includes `Procfile`, `runtime.txt`, and `main.py`:
+- **Procfile**: `web: uvicorn app:app --host 0.0.0.0 --port $PORT`
+- **Runtime**: Python 3.11
+- Deploy as a Web Service on Render or Railway with 1 click from your GitHub repo.
 
 ---
 
@@ -97,11 +126,14 @@ Every scan automatically generates structured reports in `reports/`:
 ```
 domain_recon_tool/
 ├── app.py                  # FastAPI web server (REST + SSE streaming)
+├── main.py                 # ASGI entrypoint for Render / Heroku / local servers
 ├── run_gui.py              # Auto-launch Python script for local GUI
 ├── run_gui.bat             # 1-click Windows batch launcher
-├── recon.py                # Command-line interface orchestrator
+├── recon.py                # Command-line interface orchestrator (Rich UI)
 ├── reporter.py             # JSON and HTML report generation engine
 ├── vercel.json             # Vercel serverless routing configuration
+├── Procfile                # Process definition for Render / Railway / Heroku
+├── runtime.txt             # Python 3.11 runtime specification
 ├── requirements.txt        # Python package dependencies
 ├── api/
 │   └── index.py            # Vercel serverless ASGI entrypoint
@@ -115,6 +147,7 @@ domain_recon_tool/
 │   ├── email_security.py   # SPF, DKIM, and DMARC analyzer
 │   ├── tech_fingerprint.py # Technology stack signature detection
 │   └── wayback.py          # Historical archive endpoint discovery
+├── reports/                # Output directory for generated JSON & HTML reports
 └── static/
     ├── index.html          # Executive Obsidian dashboard SPA
     ├── css/style.css       # Obsidian Slate styling & design system
@@ -126,3 +159,4 @@ domain_recon_tool/
 ## ⚖️ Legal Disclaimer
 
 *This tool is intended strictly for authorized security auditing, defensive assessment, and authorized educational research. Always obtain written authorization before scanning third-party infrastructure.*
+
