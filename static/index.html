@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OSINT Recon — Intelligence & Domain Reconnaissance Platform</title>
-  <meta name="description" content="Passive domain reconnaissance and intelligence tool. Zero paid APIs, instant multi-threaded analysis of DNS, WHOIS, CT logs, headers, ports, TLS, email, and historical archives.">
+  <title>Domain Recon Tool — Cyber Intelligence Operations Platform</title>
+  <meta name="description" content="Passive domain reconnaissance and threat perimeter intelligence platform. Zero paid APIs, multi-threaded analysis of DNS, WHOIS, CT logs, headers, ports, TLS, email, and historical archives.">
   <link rel="stylesheet" href="/static/css/style.css">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2369B8AD' stroke-width='2'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -18,34 +18,31 @@
         <div class="brand-icon">
           <div class="radar-ping"></div>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="m4.93 4.93 4.24 4.24"></path>
-            <path d="m14.83 9.17 4.24-4.24"></path>
-            <path d="m14.83 14.83 4.24 4.24"></path>
-            <path d="m9.17 14.83-4.24 4.24"></path>
-            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <circle cx="12" cy="11" r="3"></circle>
+            <path d="m14 13 3 3"></path>
           </svg>
         </div>
         <div class="brand-info">
           <h1>
-            OSINT RECON
-            <span class="version-pill">v2.0 PLATFORM</span>
+            DOMAIN RECON TOOL
+            <span class="version-pill">CYBER INTEL</span>
           </h1>
-          <p>Passive Domain Reconnaissance & Threat Perimeter Analysis</p>
+          <p>Passive Domain Intelligence & Perimeter Reconnaissance</p>
         </div>
       </div>
 
       <div class="header-actions">
         <button id="btn-open-archive" class="btn-header" title="View Saved Reports Archive">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path>
           </svg>
           Reports Archive
           <span id="header-reports-badge" class="badge-count">0</span>
         </button>
 
-        <button id="btn-load-sample" class="btn-header" title="Load Pre-saved Google.com Sample Scan">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button id="btn-load-sample" class="btn-header" title="Load Pre-saved Intelligence Scan">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <polygon points="10 8 16 12 10 16 10 8"></polygon>
           </svg>
@@ -60,7 +57,7 @@
         <div class="input-row">
           <div class="input-wrapper">
             <span class="input-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
@@ -69,7 +66,7 @@
               type="text" 
               id="target-input" 
               class="target-input" 
-              placeholder="Enter target domain or URL (e.g. example.com, github.com)..." 
+              placeholder="Enter target domain name (e.g. siesgst.edu.in, github.com)..." 
               autocomplete="off" 
               spellcheck="false" 
               required
@@ -77,34 +74,44 @@
           </div>
           <button type="submit" id="btn-submit-scan" class="btn-launch">
             <span class="btn-text-label">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
               </svg>
-              Launch Recon
+              Start Recon
             </span>
           </button>
         </div>
 
-        <!-- Quick target suggestion pills -->
-        <div class="target-hints">
-          <span>Quick Targets:</span>
-          <span class="hint-pill" data-domain="github.com">github.com</span>
-          <span class="hint-pill" data-domain="cloudflare.com">cloudflare.com</span>
-          <span class="hint-pill" data-domain="google.com">google.com</span>
-          <span class="hint-pill" data-domain="wikipedia.org">wikipedia.org</span>
+        <!-- Target suggestion quick pills & settings toggle -->
+        <div class="settings-toggle-bar">
+          <div class="target-hints">
+            <span>Targets:</span>
+            <span class="hint-pill" data-domain="siesgst.edu.in">siesgst.edu.in</span>
+            <span class="hint-pill" data-domain="github.com">github.com</span>
+            <span class="hint-pill" data-domain="cloudflare.com">cloudflare.com</span>
+            <span class="hint-pill" data-domain="google.com">google.com</span>
+          </div>
+
+          <button type="button" id="btn-toggle-settings" class="btn-toggle-settings">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span id="settings-toggle-text">Configure Modules (9)</span>
+          </button>
         </div>
 
-        <!-- Module Selection & Scan Parameters -->
-        <div class="module-settings-container">
+        <!-- Expandable Module Selection & Scan Parameters -->
+        <div class="module-settings-container" id="module-settings-container">
           <div class="settings-header">
             <h3>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="7" height="7"></rect>
                 <rect x="14" y="3" width="7" height="7"></rect>
                 <rect x="14" y="14" width="7" height="7"></rect>
                 <rect x="3" y="14" width="7" height="7"></rect>
               </svg>
-              Reconnaissance Modules (9 Parallel Analyzers)
+              Active Analyzers
             </h3>
             <div class="selector-controls">
               <button type="button" id="btn-select-all" class="btn-text">Select All</button>
@@ -114,7 +121,7 @@
           </div>
 
           <div class="modules-grid" id="modules-container">
-            <!-- Rendered dynamically via JS or preloaded -->
+            <!-- Rendered dynamically via JS -->
           </div>
 
           <div class="scan-options-row">
@@ -129,7 +136,7 @@
             <div class="option-group">
               <label class="module-checkbox-label checked" style="padding: 0.35rem 0.6rem; margin: 0;">
                 <input type="checkbox" id="save-report-toggle" class="custom-checkbox" checked>
-                <span style="font-size: 0.8rem; font-weight: 500;">Auto-generate JSON & HTML Reports</span>
+                <span style="font-size: 0.78rem; font-weight: 500;">Save Reports to Disk</span>
               </label>
             </div>
           </div>
@@ -159,7 +166,7 @@
       </div>
     </section>
 
-    <!-- Active Target Presentation Strip (Shown once target loaded) -->
+    <!-- Active Target Presentation Strip -->
     <section id="target-summary-strip" class="target-dashboard-strip" style="display: none;">
       <div class="target-badge-group">
         <div>
@@ -169,7 +176,7 @@
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            <span id="active-scan-timestamp">2026-10-06 15:30 UTC</span>
+            <span id="active-scan-timestamp">—</span>
             <span>·</span>
             <span id="active-active-modules-count">9 modules evaluated</span>
           </div>
@@ -178,7 +185,7 @@
 
       <div class="target-actions-group">
         <button id="btn-copy-target" class="btn-action" title="Copy domain to clipboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
@@ -186,7 +193,7 @@
         </button>
 
         <button id="btn-download-json" class="btn-action" title="Download Machine-Readable JSON Report">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -195,7 +202,7 @@
         </button>
 
         <button id="btn-download-html" class="btn-action primary" title="View or Download Standalone HTML Dashboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
             <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -213,9 +220,9 @@
       <!-- Security Headers Score -->
       <div class="kpi-card">
         <div class="kpi-header">
-          <span class="kpi-label">Security Headers</span>
+          <span class="kpi-label">Headers Audit</span>
           <div class="kpi-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
           </div>
@@ -224,7 +231,7 @@
           <span class="kpi-value" id="kpi-headers-score">—</span>
           <span class="badge" id="kpi-headers-badge">Pending</span>
         </div>
-        <span class="kpi-subtext" id="kpi-headers-subtext">HSTS, CSP, and framing posture</span>
+        <span class="kpi-subtext" id="kpi-headers-subtext">HSTS, CSP, and defensive posture</span>
       </div>
 
       <!-- Discovered Subdomains -->
@@ -232,7 +239,7 @@
         <div class="kpi-header">
           <span class="kpi-label">CT Subdomains</span>
           <div class="kpi-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
@@ -243,7 +250,7 @@
           <span class="kpi-value" id="kpi-subs-count">0</span>
           <span class="badge badge-muted" id="kpi-subs-badge">Passive</span>
         </div>
-        <span class="kpi-subtext" id="kpi-subs-subtext">Harvested from crt.sh logs</span>
+        <span class="kpi-subtext" id="kpi-subs-subtext">Discovered from crt.sh logs</span>
       </div>
 
       <!-- Exposed & Risky Ports -->
@@ -251,7 +258,7 @@
         <div class="kpi-header">
           <span class="kpi-label">Port Exposure</span>
           <div class="kpi-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
               <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
               <line x1="6" y1="6" x2="6.01" y2="6"></line>
@@ -269,9 +276,9 @@
       <!-- TLS Certificate Health -->
       <div class="kpi-card">
         <div class="kpi-header">
-          <span class="kpi-label">TLS Certificate</span>
+          <span class="kpi-label">TLS Validity</span>
           <div class="kpi-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
@@ -281,7 +288,7 @@
           <span class="kpi-value" id="kpi-tls-days">—</span>
           <span class="badge" id="kpi-tls-badge">Active</span>
         </div>
-        <span class="kpi-subtext" id="kpi-tls-subtext">Issuer & validity status</span>
+        <span class="kpi-subtext" id="kpi-tls-subtext">Issuer & expiration countdown</span>
       </div>
 
       <!-- Email Authentication -->
@@ -289,7 +296,7 @@
         <div class="kpi-header">
           <span class="kpi-label">Email Security</span>
           <div class="kpi-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
               <polyline points="22,6 12,13 2,6"></polyline>
             </svg>
@@ -304,7 +311,180 @@
 
     </section>
 
-    <!-- Deep-Dive Interactive Intelligence Tabs -->
+    <!-- ======================================================================
+         THE KEY FEATURE: Interactive Domain Infrastructure Map
+         ====================================================================== -->
+    <section id="map-workspace-section" class="map-workspace-card" style="display: none;">
+      <div class="map-workspace-header">
+        <div class="map-title-group">
+          <h2>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <circle cx="19" cy="5" r="2"></circle>
+              <circle cx="5" cy="19" r="2"></circle>
+              <circle cx="5" cy="5" r="2"></circle>
+              <circle cx="19" cy="19" r="2"></circle>
+              <line x1="12" y1="9" x2="19" y2="5"></line>
+              <line x1="12" y1="15" x2="5" y2="19"></line>
+              <line x1="9" y1="12" x2="5" y2="5"></line>
+              <line x1="15" y1="12" x2="19" y2="19"></line>
+            </svg>
+            Infrastructure Relationship Map
+          </h2>
+          <span id="map-node-count" class="node-counter-pill">0 nodes</span>
+        </div>
+
+        <!-- HUD Toolbar: Search, Filters, Tools -->
+        <div class="map-hud-toolbar">
+          <!-- Search box -->
+          <div class="map-search-box">
+            <span class="map-search-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input type="text" id="map-node-search" class="map-search-input" placeholder="Search node...">
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="filter-pill-group">
+            <button class="map-filter-btn active" data-filter="all">All</button>
+            <button class="map-filter-btn" data-filter="subdomain">Subdomains</button>
+            <button class="map-filter-btn" data-filter="ip">IPs</button>
+            <button class="map-filter-btn" data-filter="mx">Mail</button>
+            <button class="map-filter-btn" data-filter="ns">DNS</button>
+            <button class="map-filter-btn" data-filter="port">Ports</button>
+            <button class="map-filter-btn" data-filter="tech">Tech</button>
+          </div>
+
+          <!-- View & Physics Controls -->
+          <div class="hud-btn-group">
+            <button id="btn-map-zoom-in" class="btn-hud-tool" title="Zoom In">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <button id="btn-map-zoom-out" class="btn-hud-tool" title="Zoom Out">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <button id="btn-map-fit" class="btn-hud-tool" title="Fit to Screen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
+            <button id="btn-map-physics" class="btn-hud-tool active" title="Toggle Force Physics Simulation">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </button>
+            <button id="btn-map-reset" class="btn-hud-tool" title="Reset Layout">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+              </svg>
+            </button>
+            <button id="btn-map-fullscreen" class="btn-hud-tool" title="Toggle Fullscreen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+              </svg>
+            </button>
+            <button id="btn-map-toggle-inspector" class="btn-hud-tool active" title="Toggle Details Panel">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="15" y1="3" x2="15" y2="21"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Map Body: Canvas + Inspector Sidebar -->
+      <div class="map-workbench-body" id="map-workbench-body">
+        
+        <!-- Canvas Viewport -->
+        <div class="canvas-viewport" id="canvas-viewport">
+          <canvas id="infrastructure-canvas"></canvas>
+
+          <!-- Floating Legend -->
+          <div class="canvas-floating-legend">
+            <div class="legend-item"><span class="legend-dot domain"></span> Root Domain</div>
+            <div class="legend-item"><span class="legend-dot subdomain"></span> Subdomain</div>
+            <div class="legend-item"><span class="legend-dot ip"></span> IP Address</div>
+            <div class="legend-item"><span class="legend-dot mx"></span> Mail Server</div>
+            <div class="legend-item"><span class="legend-dot ns"></span> Nameserver</div>
+            <div class="legend-item"><span class="legend-dot port"></span> Port / Service</div>
+            <div class="legend-item"><span class="legend-dot tech"></span> Tech Stack</div>
+          </div>
+
+          <!-- Hover Tooltip -->
+          <div id="canvas-tooltip" class="canvas-tooltip">
+            <div id="tooltip-type" class="tooltip-type">ASSET TYPE</div>
+            <div id="tooltip-val" class="tooltip-val">asset.domain.com</div>
+            <div id="tooltip-sub" class="tooltip-sub">Click to inspect connections</div>
+          </div>
+        </div>
+
+        <!-- Secondary Panel: Asset Inspector -->
+        <aside class="map-inspector-panel" id="map-inspector-panel">
+          <div class="inspector-header">
+            <h3>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Asset Inspector
+            </h3>
+            <button id="btn-close-inspector" class="btn-close-inspector" title="Close Inspector">&times;</button>
+          </div>
+
+          <div class="inspector-body" id="inspector-body">
+            <!-- Populated via JS when a node is clicked -->
+            <div class="inspector-empty" id="inspector-empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <p>Click on any node in the infrastructure map to inspect properties, risk analysis, and connected neighbors.</p>
+            </div>
+
+            <div id="inspector-details" style="display: none;">
+              <div class="inspector-asset-card">
+                <span id="inspector-asset-type" class="inspector-asset-type-badge badge badge-safe">DOMAIN</span>
+                <div id="inspector-asset-title" class="inspector-asset-title">example.com</div>
+                <div id="inspector-asset-meta" class="inspector-asset-meta">Target Root Asset</div>
+              </div>
+
+              <div class="inspector-section-label">
+                <span>Asset Attributes</span>
+              </div>
+              <table class="inspector-kv-table" id="inspector-kv-table">
+                <tbody>
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+
+              <div class="inspector-section-label">
+                <span>Connected Infrastructure (<span id="inspector-neighbor-count">0</span>)</span>
+              </div>
+              <div id="inspector-neighbors-list">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         Deep-Dive Interactive Intelligence Tabs
+         ====================================================================== -->
     <main id="deep-dive-section" class="deep-dive-card" style="display: none;">
       
       <!-- Horizontal Navigation Bar -->
@@ -345,19 +525,19 @@
       <section id="tab-overview" class="tab-content-panel active">
         <div class="section-header-row">
           <h3>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 14 14"></polyline>
             </svg>
-            Executive Summary & Security Findings
+            Executive Summary & Findings
           </h3>
         </div>
 
-        <div id="overview-risk-alerts" style="margin-bottom: 1.5rem;">
+        <div id="overview-risk-alerts" style="margin-bottom: 1.25rem;">
           <!-- Dynamically populated risk highlights -->
         </div>
 
-        <div class="section-header-row" style="margin-top: 1.5rem;">
+        <div class="section-header-row" style="margin-top: 1.25rem;">
           <h3>Evaluated Intelligence Modules</h3>
         </div>
         <div class="data-table-wrapper">
@@ -434,8 +614,8 @@
           <div class="score-display-group">
             <div id="headers-score-circle" class="score-circle">0%</div>
             <div>
-              <h3 style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 0.2rem;">HTTP Security Headers Score</h3>
-              <p style="color: var(--text-dim); font-size: 0.82rem;" id="headers-score-explanation">Evaluation of defensive headers configured on web perimeter.</p>
+              <h3 style="color: var(--text-primary); font-size: 1.05rem; margin-bottom: 0.2rem;">HTTP Security Headers Score</h3>
+              <p style="color: var(--text-muted); font-size: 0.8rem;" id="headers-score-explanation">Evaluation of defensive headers configured on web perimeter.</p>
             </div>
           </div>
           <div id="headers-score-badges"></div>
@@ -478,7 +658,7 @@
           <!-- Rendered via JS -->
         </div>
         <div class="section-header-row">
-          <h4 style="color: var(--text-primary); font-size: 0.95rem;">Subject Alternative Names (SANs)</h4>
+          <h4 style="color: var(--text-primary); font-size: 0.9rem;">Subject Alternative Names (SANs)</h4>
         </div>
         <div class="subdomains-cloud" id="tls-sans-container" style="max-height: 180px;">
           <!-- Rendered via JS -->
@@ -495,7 +675,7 @@
           <!-- Rendered via JS -->
         </div>
         <div class="section-header-row">
-          <h4 style="color: var(--text-primary); font-size: 0.95rem;">Detected Configuration Issues & Warnings</h4>
+          <h4 style="color: var(--text-primary); font-size: 0.9rem;">Detected Configuration Issues & Warnings</h4>
         </div>
         <div id="email-issues-list">
           <!-- Rendered via JS -->
@@ -523,7 +703,7 @@
           <!-- Rendered via JS -->
         </div>
         <div class="section-header-row">
-          <h4 style="color: var(--text-primary); font-size: 0.95rem;">Interesting Endpoints & Archival Snapshots</h4>
+          <h4 style="color: var(--text-primary); font-size: 0.9rem;">Interesting Endpoints & Archival Snapshots</h4>
         </div>
         <div class="data-table-wrapper">
           <table class="data-table" id="table-wayback">
@@ -544,21 +724,20 @@
     </main>
 
     <!-- Empty State Placeholder (when no scan loaded yet) -->
-    <section id="empty-state" class="scan-card" style="text-align: center; padding: 3.5rem 2rem; margin-top: 1rem;">
-      <div style="max-width: 480px; margin: 0 auto;">
-        <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; color: var(--accent-primary);">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polygon points="12 8 8 12 12 16 12 8"></polygon>
-            <line x1="16" y1="12" x2="12" y2="12"></line>
+    <section id="empty-state" class="scan-card" style="text-align: center; padding: 3.5rem 2rem;">
+      <div style="max-width: 500px; margin: 0 auto;">
+        <div style="width: 50px; height: 50px; border-radius: 10px; background: var(--accent-teal-bg); border: 1px solid var(--accent-teal-border); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; color: var(--accent-teal);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <circle cx="12" cy="11" r="3"></circle>
           </svg>
         </div>
-        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">No Reconnaissance Data Loaded</h2>
-        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
-          Enter a domain above to run a comprehensive passive scan, or click "Load Sample" to explore pre-generated intelligence data.
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Ready for Target Reconnaissance</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; line-height: 1.5;">
+          Enter a domain name above to initiate 9-vector passive intelligence gathering, or explore a pre-scanned asset via the sample loader.
         </p>
-        <button id="btn-empty-load-sample" class="btn-launch" style="padding: 0.65rem 1.4rem; font-size: 0.85rem; display: inline-flex;">
-          Explore Sample Intelligence (google.com)
+        <button id="btn-empty-load-sample" class="btn-launch" style="padding: 0.65rem 1.4rem; font-size: 0.82rem; display: inline-flex;">
+          Explore Sample Intelligence (siesgst.edu.in)
         </button>
       </div>
     </section>
@@ -570,7 +749,7 @@
     <div class="modal-box">
       <div class="modal-header">
         <h3>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
             <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path>
           </svg>
           Saved Reconnaissance Reports Archive
